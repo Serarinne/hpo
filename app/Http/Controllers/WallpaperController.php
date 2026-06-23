@@ -9,14 +9,14 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Laravel\Facades\Image;
-use Intervention\Image\Encoders\WebpEncoder;
-use Intervention\Image\Enums\FileExtension;
 use FFMpeg\Coordinate\Dimension;
 use FFMpeg\FFMpeg;
 use FFMpeg\FFProbe;
 use FFMpeg\Format\Video\X264;
 use FFMpeg\Coordinate\TimeCode;
 use App\Services\BunnyStorage;
+use Intervention\Image\Encoders\WebpEncoder;
+use Intervention\Image\FileExtension;
 
 class WallpaperController extends Controller
 {
