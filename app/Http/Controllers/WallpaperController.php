@@ -16,6 +16,7 @@ use FFMpeg\FFMpeg;
 use FFMpeg\FFProbe;
 use FFMpeg\Format\Video\X264;
 use FFMpeg\Coordinate\TimeCode;
+use App\Services\BunnyStorage;
 
 class WallpaperController extends Controller
 {
