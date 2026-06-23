@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\FetchTask;
+use App\Models\App\FetchTask;
 use App\Services\WallpaperFetcherService;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -48,12 +48,12 @@ class FetchWallpapersJob implements ShouldQueue
         $task = FetchTask::find($this->taskId);
 
         if (!$task) {
-            Log::error("[Fetch Job] [Task:{$this->taskId}] Task not found.");
+            Log::error("[Fetch Job] [Task:{$this->taskId}] Task tidak ditemukan.");
             return;
         }
 
         if (!in_array($task->status, ['running', 'rerunning'], true)) {
-            Log::warning("[Fetch Job] [Task:{$task->id}] [Tag:{$task->tag_name}] Invalid status: {$task->status}. Skipping.");
+            Log::warning("[Fetch Job] [Task:{$task->id}] [Tag:{$task->tag_name}] Status invalid: {$task->status}. Skipping.");
             return;
         }
 
@@ -86,7 +86,7 @@ class FetchWallpapersJob implements ShouldQueue
             $task->refresh();
 
             if (!in_array($task->status, ['running', 'rerunning'], true)) {
-                Log::warning("[Fetch Job] [{$mode}] [Task:{$task->id}] [Tag:{$rawTag}] Status changed to {$task->status}. Stopping.");
+                Log::warning("[Fetch Job] [{$mode}] [Task:{$task->id}] [Tag:{$rawTag}] Status berubah menjadi {$task->status}. Stop.");
                 return;
             }
 
@@ -103,7 +103,7 @@ class FetchWallpapersJob implements ShouldQueue
             $posts = $fetcherService->fetchFromApi($task->source_api, $apiTag, $currentPage);
 
             if ($posts === null) {
-                Log::warning("[Fetch Job] [{$mode}] [Task:{$task->id}] [Tag:{$rawTag}] Page {$currentPage}: API error. Stopping for now.");
+                Log::warning("[Fetch Job] [{$mode}] [Task:{$task->id}] [Tag:{$rawTag}] Page {$currentPage}: API error. Stop for now.");
                 break;
             }
 
@@ -154,7 +154,7 @@ class FetchWallpapersJob implements ShouldQueue
                 }
 
                 if ($consecutiveDuplicatePages >= self::MAX_CONSECUTIVE_DUPLICATE_PAGES) {
-                    Log::info("[Fetch Job] [{$mode}] [Task:{$task->id}] [Tag:{$rawTag}] Early stop due to duplicate page limit.");
+                    Log::info("[Fetch Job] [{$mode}] [Task:{$task->id}] [Tag:{$rawTag}] Early stop due duplicate page limit.");
                     $shouldComplete = true;
                     break;
                 }

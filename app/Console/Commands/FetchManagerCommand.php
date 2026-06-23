@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Jobs\FetchWallpapersJob;
-use App\Models\FetchTask;
+use App\Models\App\FetchTask;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -14,14 +14,14 @@ class FetchManagerCommand extends Command
 {
     protected $signature = 'fetch:manager
                             {--api=danbooru : Source API (danbooru/gelbooru/zerochan)}
-                            {--tags= : Optional manual tag fetch}
-                            {--max-concurrent=3 : Maximum number of concurrent tasks}
-                            {--force-populate : Force populate from Core without conditions}
+                            {--tags= : (Opsional) Fetch tag spesifik manual}
+                            {--max-concurrent=3 : Maksimal task running bersamaan}
+                            {--force-populate : Force populate dari Core tanpa kondisi}
                             {--skip-populate : Skip auto-populate}
-                            {--timeout=10 : Timeout for stuck tasks in minutes}
+                            {--timeout=10 : Timeout stuck task dalam menit}
                             {--debug : Enable debug logging}';
 
-    protected $description = 'Synchronous fetch manager that fills empty slots based on waterfall priority.';
+    protected $description = 'Fetch manager sinkron, mengisi slot kosong sesuai prioritas air terjun.';
 
     private int $windowMinutes = 2;
     private int $allowedSeriesId = 1;
@@ -40,12 +40,12 @@ class FetchManagerCommand extends Command
         $appName = config('app.name', 'NTE App');
 
         if ($maxConcurrent < 1 || $maxConcurrent > 10) {
-            $this->error('❌ The --max-concurrent option must be between 1 and 10.');
+            $this->error('❌ Parameter --max-concurrent harus antara 1-10');
             return self::FAILURE;
         }
 
         if ($timeout < 5 || $timeout > 60) {
-            $this->error('❌ The --timeout option must be between 5 and 60 minutes.');
+            $this->error('❌ Parameter --timeout harus antara 5-60 menit');
             return self::FAILURE;
         }
 
@@ -55,78 +55,95 @@ class FetchManagerCommand extends Command
         $this->info("🔢 Max Concurrent: {$maxConcurrent} | Timeout: {$timeout} min | Window: {$this->windowMinutes} min");
         $this->info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
+        // 1. Reset Stuck Tasks
         $resetCount = $this->resetStuckTasks($sourceApi, $timeout);
         if ($resetCount > 0) {
             $this->info("🔄 Reset {$resetCount} stuck task(s)");
         }
 
+        // 2. Handle Manual Tags
         if ($specificTags) {
             $this->handleManualTagsInput($specificTags, $sourceApi);
         }
 
+        // 3. Hitung Ketersediaan Slot
         $recentlyDispatchedCount = $this->countRecentlyDispatched($sourceApi);
         $availableSlots = max(0, $maxConcurrent - $recentlyDispatchedCount);
 
-        $this->info("📊 Recently dispatched: {$recentlyDispatchedCount}/{$maxConcurrent} | Available slots: {$availableSlots}");
+        $this->info("📊 Recently dispatched: {$recentlyDispatchedCount}/{$maxConcurrent} | Slot tersedia: {$availableSlots}");
 
         if ($availableSlots <= 0) {
-            $this->comment('✓ All slots are currently in use. Waiting for jobs to finish.');
+            $this->comment('✓ Semua slot sedang terpakai. Menunggu job selesai.');
             $this->showRecentActiveTasks($sourceApi);
             return self::SUCCESS;
         }
 
         $tasksToDispatch = collect();
 
+        // ====================================================================
+        // SISTEM AIR TERJUN (WATERFALL) UNTUK MENGISI SLOT KOSONG
+        // ====================================================================
+
+        // PRIORITAS 1: Lanjutkan running/rerunning yang butuh didispatch
         if ($availableSlots > 0) {
             $p1Tasks = $this->claimContinuationTasks($sourceApi, $availableSlots);
             if ($p1Tasks->isNotEmpty()) {
-                $this->line("🎯 Priority 1: Selected {$p1Tasks->count()} active task(s) (running/rerunning)");
+                $this->line("🎯 Prioritas 1: Memilih {$p1Tasks->count()} task aktif (running/rerunning)");
                 $tasksToDispatch = $tasksToDispatch->merge($p1Tasks);
                 $availableSlots -= $p1Tasks->count();
             }
         }
 
+        // PRIORITAS 2: Ambil task Pending
         if ($availableSlots > 0) {
             $p2Tasks = $this->claimPendingTasks($sourceApi, $availableSlots);
             if ($p2Tasks->isNotEmpty()) {
-                $this->line("🆕 Priority 2: Selected {$p2Tasks->count()} pending task(s)");
+                $this->line("🆕 Prioritas 2: Memilih {$p2Tasks->count()} task pending");
                 $tasksToDispatch = $tasksToDispatch->merge($p2Tasks);
                 $availableSlots -= $p2Tasks->count();
             }
         }
 
+        // Cek apakah antrian benar-benar kosong untuk Prioritas 3 & 4
         $hasActiveOrPendingQueue = FetchTask::where('source_api', $sourceApi)
             ->whereIn('status', ['pending', 'running', 'rerunning'])
             ->exists();
 
+        // PRIORITAS 3: Auto Populate (Hanya jalan jika queue aktif/pending kosong)
         if ($availableSlots > 0 && !$hasActiveOrPendingQueue && !$skipPopulate) {
-            $this->line('🔍 Priority 3: Queue is empty, trying auto-populate from Core...');
+            $this->line('🔍 Prioritas 3: Antrian kosong, mencoba auto-populate dari Core...');
             $newCount = $this->smartAutoPopulateOnlyWhenQueueEmpty($sourceApi, $forcePopulate);
-
+            
             if ($newCount > 0) {
-                $this->info("✓ Auto-populate added {$newCount} new task(s).");
-
+                $this->info("✓ Auto-populate berhasil menambahkan {$newCount} task baru.");
+                
+                // Ambil task pending yang baru saja dipopulate
                 $p3Tasks = $this->claimPendingTasks($sourceApi, $availableSlots);
                 if ($p3Tasks->isNotEmpty()) {
-                    $this->line("🆕 Selected {$p3Tasks->count()} task(s) from populated results");
+                    $this->line("🆕 Memilih {$p3Tasks->count()} task dari hasil populate");
                     $tasksToDispatch = $tasksToDispatch->merge($p3Tasks);
                     $availableSlots -= $p3Tasks->count();
-                    $hasActiveOrPendingQueue = true;
+                    $hasActiveOrPendingQueue = true; // Queue tidak lagi kosong
                 }
             }
         }
 
+        // PRIORITAS 4: Refresh Completed > 24 jam (Hanya jika benar-benar tidak ada yang lain)
         if ($availableSlots > 0 && !$hasActiveOrPendingQueue) {
             $p4Tasks = $this->claimCompletedTasksForRerun($sourceApi, $availableSlots);
             if ($p4Tasks->isNotEmpty()) {
-                $this->line("🔄 Priority 4: Selected {$p4Tasks->count()} older completed task(s) for rerun");
+                $this->line("🔄 Prioritas 4: Memilih {$p4Tasks->count()} task completed lama untuk di-rerun");
                 $tasksToDispatch = $tasksToDispatch->merge($p4Tasks);
                 $availableSlots -= $p4Tasks->count();
             }
         }
 
+        // ====================================================================
+        // DISPATCH
+        // ====================================================================
+
         if ($tasksToDispatch->isEmpty()) {
-            $this->comment('✓ No eligible jobs can be run right now.');
+            $this->comment('✓ Tidak ada job eligible yang bisa dijalankan saat ini.');
             $this->showStats($sourceApi);
             return self::SUCCESS;
         }
@@ -188,9 +205,7 @@ class FetchManagerCommand extends Command
 
     private function claimContinuationTasks(string $sourceApi, int $limit)
     {
-        if ($limit <= 0) {
-            return collect();
-        }
+        if ($limit <= 0) return collect();
 
         $tasks = collect();
         $now = now();
@@ -208,9 +223,7 @@ class FetchManagerCommand extends Command
             ->get();
 
         foreach ($candidates as $candidate) {
-            if ($tasks->count() >= $limit) {
-                break;
-            }
+            if ($tasks->count() >= $limit) break;
 
             DB::transaction(function () use ($candidate, $now, $cutoff, &$tasks) {
                 $task = FetchTask::where('id', $candidate->id)
@@ -222,9 +235,7 @@ class FetchManagerCommand extends Command
                     ->lockForUpdate()
                     ->first();
 
-                if (!$task) {
-                    return;
-                }
+                if (!$task) return;
 
                 $task->update([
                     'last_run_at' => $now,
@@ -239,9 +250,7 @@ class FetchManagerCommand extends Command
 
     private function claimPendingTasks(string $sourceApi, int $limit)
     {
-        if ($limit <= 0) {
-            return collect();
-        }
+        if ($limit <= 0) return collect();
 
         $tasks = collect();
         $now = now();
@@ -253,9 +262,7 @@ class FetchManagerCommand extends Command
             ->get();
 
         foreach ($candidates as $candidate) {
-            if ($tasks->count() >= $limit) {
-                break;
-            }
+            if ($tasks->count() >= $limit) break;
 
             DB::transaction(function () use ($candidate, $now, &$tasks) {
                 $task = FetchTask::where('id', $candidate->id)
@@ -263,9 +270,7 @@ class FetchManagerCommand extends Command
                     ->lockForUpdate()
                     ->first();
 
-                if (!$task) {
-                    return;
-                }
+                if (!$task) return;
 
                 $task->update([
                     'status' => 'running',
@@ -282,9 +287,7 @@ class FetchManagerCommand extends Command
 
     private function claimCompletedTasksForRerun(string $sourceApi, int $limit)
     {
-        if ($limit <= 0) {
-            return collect();
-        }
+        if ($limit <= 0) return collect();
 
         $tasks = collect();
         $now = now();
@@ -298,9 +301,7 @@ class FetchManagerCommand extends Command
             ->get();
 
         foreach ($candidates as $candidate) {
-            if ($tasks->count() >= $limit) {
-                break;
-            }
+            if ($tasks->count() >= $limit) break;
 
             DB::transaction(function () use ($candidate, $now, $cutoff, &$tasks) {
                 $task = FetchTask::where('id', $candidate->id)
@@ -309,9 +310,7 @@ class FetchManagerCommand extends Command
                     ->lockForUpdate()
                     ->first();
 
-                if (!$task) {
-                    return;
-                }
+                if (!$task) return;
 
                 $task->update([
                     'status' => 'rerunning',
@@ -364,9 +363,7 @@ class FetchManagerCommand extends Command
             DB::transaction(function () use ($taskId) {
                 $task = FetchTask::where('id', $taskId)->lockForUpdate()->first();
 
-                if (!$task) {
-                    return;
-                }
+                if (!$task) return;
 
                 if ($task->status === 'running' && (int) $task->current_page === 1) {
                     $task->update([
@@ -494,7 +491,7 @@ class FetchManagerCommand extends Command
         $tagsArray = array_values(array_unique(array_filter(array_map('trim', explode(',', $specificTags)))));
 
         if (empty($tagsArray)) {
-            $this->warn('⚠️ No valid tags found.');
+            $this->warn('⚠️ Tidak ada tag yang valid.');
             return;
         }
 
