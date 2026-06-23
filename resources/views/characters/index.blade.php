@@ -172,7 +172,7 @@
                 </div>
             </form>
 
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 mb-12 relative z-10">
+            <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-5 mb-12 relative z-10">
                 @forelse($characters as $character)
                     <x-character-card :character="$character" />
                 @empty
