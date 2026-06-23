@@ -170,7 +170,7 @@
             {{ $fetchedWallpapers->links('components.pagination') }}
             @endif
 
-            <div class="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-5 space-y-5 relative z-10">
+            <div class="columns-3 md:columns-4 lg:columns-5 xl:columns-5 gap-5 space-y-5 relative z-10">
                 @forelse($fetchedWallpapers as $wp)
                     <div id="card-{{ $wp->id }}" class="break-inside-avoid relative group rounded-[1.5rem] overflow-hidden bg-slate-900/60 border backdrop-blur-sm shadow-lg hover:shadow-[0_0_20px_rgba(34,211,238,0.15)] transform hover:-translate-y-1 transition-all duration-300 {{ $wp->is_duplicate ? 'border-rose-500/40 hover:border-rose-500/60 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-white/5 hover:border-cyan-500/30' }}">
                         
