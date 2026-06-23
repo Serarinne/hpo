@@ -20,7 +20,7 @@
     <div class="relative z-10 overflow-hidden bg-slate-900/50">
         <picture class="w-full h-auto block group-hover:scale-110 transition-transform duration-700 ease-out transform-gpu">
             <source srcset="{{ $wallpaper->thumbnail['webp'] }}" type="image/webp">
-            <img itemprop="thumbnailUrl" src="{{ $wallpaper->thumbnail['jpg'] }}" alt="{{ $wallpaper->seo_title }}" loading="lazy" decoding="async" width="300" height="{{ $wallpaper->width > 0 ? round(($wallpaper->height / $wallpaper->width) * 300) : 300 }}" class="w-full h-auto object-cover" >
+            <img itemprop="thumbnailUrl" src="{{ $wallpaper->thumbnail['jpg'] }}" alt="{{ $wallpaper->seo_title }}" width="300" height="{{ $wallpaper->width > 0 ? round(($wallpaper->height / $wallpaper->width) * 300) : 300 }}" class="w-full h-auto object-cover" >
         </picture>
     </div>
 
