@@ -48,7 +48,7 @@ class Wallpaper extends Model
     protected function isVideo(): Attribute
     {
         return Attribute::make(
-            get: fn (mixed $value, array $attributes) => str_starts_with($attributes['file_type'] ?? '', 'mp4')
+            get: fn (mixed $value, array $attributes) => str_starts_with($attributes['file_type'] ?? '', 'video/')
         );
     }
 

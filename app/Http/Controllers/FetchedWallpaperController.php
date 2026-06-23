@@ -277,8 +277,7 @@ class FetchedWallpaperController extends Controller
         $videoFormats = ['mp4', 'webm', 'video/mp4', 'video/webm'];
 
         if (in_array(strtolower($fetch->file_type), $videoFormats)) {
-            $tagIds[] = 4430;
-            $tagIds[] = 69;
+            $tagIds[] = 3470;
             $tagIds = array_unique($tagIds);
         }
 
