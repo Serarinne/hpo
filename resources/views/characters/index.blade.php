@@ -187,229 +187,83 @@
             </div>
 
             @if($characters->hasPages())
-                {{ $characters->withQueryString()->links('components.pagination') }}
+                    {{ $characters->withQueryString()->links('components.pagination') }}
             @endif
         </div>
     </main>
     
     <x-footer />
-
     <script>
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
-
-    function ensureSwal() {
-        if (typeof Swal === 'undefined') {
-            console.error('SweetAlert2 is not loaded.');
-            alert('SweetAlert2 is not loaded. Check <x-assets />.');
-            return false;
-        }
-        return true;
-    }
-
-    function showToast(icon, title, background = '#0f172a', color = '#e2e8f0') {
-        if (!ensureSwal()) return;
-
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon,
-            title,
-            showConfirmButton: false,
-            timer: 2200,
-            timerProgressBar: true,
-            background,
-            color
-        });
-    }
-
-    async function parseJsonSafe(response) {
-        const text = await response.text();
-        try {
-            return text ? JSON.parse(text) : {};
-        } catch (e) {
-            console.error('Invalid JSON response:', text);
-            throw new Error('Server did not return valid JSON.');
-        }
-    }
-
-    window.deleteCharacterCard = async function(characterId, characterName) {
-        if (!ensureSwal()) return;
-
-        const result = await Swal.fire({
-            title: 'Delete Character?',
-            text: `Character "${characterName}" and its relationships will be permanently deleted.`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#f43f5e',
-            cancelButtonColor: '#64748b',
-            confirmButtonText: 'Yes, delete it',
-            cancelButtonText: 'Cancel',
-            reverseButtons: true,
-            background: '#020617',
-            color: '#e2e8f0'
-        });
-
-        if (!result.isConfirmed) return;
-
-        try {
-            const urlTemplate = "{{ route('characters.delete', ['id' => '__ID__']) }}";
-            const url = urlTemplate.replace('__ID__', characterId);
-
-            const response = await fetch(url, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        window.toggleDebug = async function(characterId, isDebug) {
+            try {
+                const urlTemplate = "{{ route('characters.toggle-debug', ['id' => '__ID__']) }}";
+                const url = urlTemplate.replace('__ID__', characterId);
+                const response = await fetch(url, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ debug: isDebug })
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    console.error('Failed to update debug:', data.message);
                 }
-            });
-
-            const data = await parseJsonSafe(response);
-
-            if (!response.ok || !data.success) {
-                throw new Error(data.message || 'Failed to delete character.');
-            }
-
-            const element = document.getElementById(`character-card-${characterId}`);
-            if (element) {
-                element.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
-                element.style.opacity = '0';
-                element.style.transform = 'scale(0.96)';
-                setTimeout(() => element.remove(), 260);
-            }
-
-            showToast('success', data.message, '#052e16', '#d1fae5');
-        } catch (error) {
-            console.error('Delete error:', error);
-            showToast('error', error.message || 'Failed to delete character.', '#450a0a', '#fee2e2');
-        }
-    };
-
-    window.toggleDebug = async function(characterId, isDebug) {
-        try {
-            const urlTemplate = "{{ route('characters.toggle-debug', ['id' => '__ID__']) }}";
-            const url = urlTemplate.replace('__ID__', characterId);
-
-            const response = await fetch(url, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ debug: isDebug })
-            });
-
-            const data = await parseJsonSafe(response);
-
-            if (!response.ok || !data.success) {
-                showToast('error', data.message || 'Failed to update debug.', '#450a0a', '#fee2e2');
-            }
-        } catch (error) {
-            console.error('Network error occurred:', error);
-            showToast('error', 'Network error occurred while updating debug.', '#450a0a', '#fee2e2');
-        }
-    };
-
-    window.toggleRatingDropdown = async function(characterId, event) {
-        if (!ensureSwal()) return;
-
-        const button = event.currentTarget;
-        const currentRating = button.getAttribute('data-rating');
-        const ratingOptions = {
-            general: 'General (GEN)',
-            sensitive: 'Sensitive (SEN)',
-            questionable: 'Questionable (QST)',
-            explicit: 'Explicit (EXP)',
-            unknown: 'Unknown (UNK)'
-        };
-
-        const { value: selectedRating } = await Swal.fire({
-            title: 'Change Character Rating',
-            input: 'select',
-            inputOptions: ratingOptions,
-            inputValue: currentRating,
-            showCancelButton: true,
-            confirmButtonColor: '#0ea5e9',
-            cancelButtonColor: '#64748b',
-            confirmButtonText: 'Save',
-            cancelButtonText: 'Cancel',
-            background: '#020617',
-            color: '#e2e8f0'
-        });
-
-        if (!selectedRating || selectedRating === currentRating) return;
-
-        try {
-            button.style.opacity = '0.5';
-            button.style.pointerEvents = 'none';
-
-            const urlTemplate = "{{ route('characters.update-rating', ['id' => '__ID__']) }}";
-            const url = urlTemplate.replace('__ID__', characterId);
-
-            const response = await fetch(url, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ rating: selectedRating })
-            });
-
-            const data = await parseJsonSafe(response);
-
-            if (!response.ok || !data.success) {
-                throw new Error(data.message || 'Failed to update rating.');
-            }
-
-            updateRatingButtonUI(button, selectedRating);
-            showToast('success', 'Rating updated!', '#082f49', '#e0f2fe');
-        } catch (error) {
-            console.error('Rating update error:', error);
-            showToast('error', error.message || 'Failed to change rating.', '#450a0a', '#fee2e2');
-        } finally {
-            button.style.opacity = '1';
-            button.style.pointerEvents = 'auto';
-        }
-    };
-
-    function updateRatingButtonUI(buttonElement, newRating) {
-        const textSpan = buttonElement.querySelector('.rating-text');
-        const baseClasses = "h-8 px-3 rounded-xl border backdrop-blur-md transition-all duration-300 flex items-center justify-center font-black text-[10px] uppercase tracking-widest outline-none group/rating hover:scale-105";
-
-        const map = {
-            general: {
-                text: 'GEN',
-                classes: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
-            },
-            sensitive: {
-                text: 'SEN',
-                classes: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]'
-            },
-            questionable: {
-                text: 'QST',
-                classes: 'bg-orange-500/20 text-orange-400 border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.2)]'
-            },
-            explicit: {
-                text: 'EXP',
-                classes: 'bg-rose-500/20 text-rose-400 border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.2)]'
-            },
-            unknown: {
-                text: 'UNK',
-                classes: 'bg-slate-500/20 text-slate-300 border-slate-500/30 shadow-[0_0_15px_rgba(100,116,139,0.2)]'
+            } catch (error) {
+                console.error('Network error occurred:', error);
             }
         };
-
-        const config = map[newRating] || map.unknown;
-        buttonElement.className = `${baseClasses} ${config.classes}`;
-        textSpan.textContent = config.text;
-        buttonElement.setAttribute('data-rating', newRating);
-    }
-</script>
-
+        window.toggleRatingDropdown = async function(characterId, event) {
+            const button = event.currentTarget;
+            const currentRating = button.getAttribute('data-rating');
+            const ratingOptions = { 'general': 'General (GEN)', 'sensitive': 'Sensitive (SEN)', 'questionable': 'Questionable (QST)', 'explicit': 'Explicit (EXP)', 'unknown': 'Unknown (UNK)' };
+            const { value: selectedRating } = await Swal.fire({
+                title: 'Change Character Rating',
+                input: 'select',
+                inputOptions: ratingOptions,
+                inputValue: currentRating,
+                showCancelButton: true,
+                confirmButtonColor: '#0ea5e9',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Save',
+                cancelButtonText: 'Cancel'
+            });
+            if (selectedRating && selectedRating !== currentRating) {
+                try {
+                    button.style.opacity = '0.5';
+                    const urlTemplate = "{{ route('characters.update-rating', ['id' => '__ID__']) }}";
+                    const url = urlTemplate.replace('__ID__', characterId);
+                    const response = await fetch(url, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                        body: JSON.stringify({ rating: selectedRating })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        updateRatingButtonUI(button, selectedRating);
+                        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Rating updated!', showConfirmButton: false, timer: 1500 });
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire('Error!', 'Failed to change rating.', 'error');
+                } finally {
+                    button.style.opacity = '1';
+                }
+            }
+        };
+        function updateRatingButtonUI(buttonElement, newRating) {
+            const textSpan = buttonElement.querySelector('.rating-text');
+            buttonElement.className = buttonElement.className.replace(/(bg|border|text)-[a-z]+-[0-9]+\/?([0-9]+)?/g, '').trim();
+            let baseClasses = "h-7 px-2 rounded-md border backdrop-blur-md transition-all flex items-center justify-center shadow-lg font-black text-[10px] tracking-tight ";
+            switch(newRating) {
+                case 'general': buttonElement.className = baseClasses + 'bg-emerald-500/90 text-white border-emerald-400/50'; textSpan.textContent = 'GEN'; break;
+                case 'sensitive': buttonElement.className = baseClasses + 'bg-yellow-500/90 text-white border-yellow-400/50'; textSpan.textContent = 'SEN'; break;
+                case 'questionable': buttonElement.className = baseClasses + 'bg-orange-500/90 text-white border-orange-400/50'; textSpan.textContent = 'QST'; break;
+                case 'explicit': buttonElement.className = baseClasses + 'bg-rose-500/90 text-white border-rose-400/50'; textSpan.textContent = 'EXP'; break;
+                default: buttonElement.className = baseClasses + 'bg-slate-500/90 text-white border-slate-400/50'; textSpan.textContent = 'UNK'; break;
+            }
+            buttonElement.setAttribute('data-rating', newRating);
+        }
+    </script>
     <script>
         document.addEventListener('click', function(event) {
             const dropdowns = document.querySelectorAll('details.custom-dropdown');
