@@ -264,15 +264,10 @@
         </a>
 
         <button type="button"
-            data-name="{{ $character->name }}"
-            @click.prevent.stop="window.deleteCharacterCard({{ $character->id }}, $el.dataset.name)"
-            class="pointer-events-auto w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)] hover:bg-rose-500/30 hover:border-rose-400/60 hover:scale-105"
-            title="Delete Character"
-            aria-label="Delete {{ $character->name }}">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0l1 12a1 1 0 001 1h6a1 1 0 001-1l1-12"></path>
-            </svg>
-        </button>
+    @click.prevent.stop="deleteCharacterCard({{ $character->id }}, @js($character->name))"
+    class="pointer-events-auto w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)] hover:bg-rose-500/30 hover:border-rose-400/60 hover:scale-105"
+    title="Delete Character"
+    aria-label="Delete {{ $character->name }}">
     </div>
 
     <div class="absolute top-3 right-3 z-30 pointer-events-auto">
@@ -316,6 +311,65 @@
     </main>
     
     <x-footer />
+
+    <script>
+    function deleteCharacterCard(characterId, characterName) {
+        return window.__deleteCharacterCard(characterId, characterName);
+    }
+
+    window.__deleteCharacterCard = async function(characterId, characterName) {
+        if (!ensureSwal()) return;
+
+        const result = await Swal.fire({
+            title: 'Delete Character?',
+            text: 'Character "' + characterName + '" and its relationships will be permanently deleted.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f43f5e',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, delete it',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            background: '#020617',
+            color: '#e2e8f0'
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            const urlTemplate = "{{ route('characters.delete', ['id' => '__ID__']) }}";
+            const url = urlTemplate.replace('__ID__', characterId);
+
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await parseJsonSafe(response);
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Failed to delete character.');
+            }
+
+            const element = document.getElementById('character-card-' + characterId);
+            if (element) {
+                element.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+                element.style.opacity = '0';
+                element.style.transform = 'scale(0.96)';
+                setTimeout(function() { element.remove(); }, 260);
+            }
+
+            showToast('success', data.message, '#052e16', '#d1fae5');
+        } catch (error) {
+            console.error('Delete error:', error);
+            showToast('error', error.message || 'Failed to delete character.', '#450a0a', '#fee2e2');
+        }
+    };
+</script>
 
     <script>
     var metaTag = document.querySelector('meta[name="csrf-token"]');
