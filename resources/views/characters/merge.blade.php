@@ -7,54 +7,44 @@
     <title>Merge Character - {{ env('APP_NAME') }}</title>
     <x-assets />
     
+    <!-- Tom Select CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        .select2-container--default .select2-selection--single {
-            background-color: #020617; 
-            border: 1px solid #1e293b; 
-            border-radius: 0.75rem; 
-            height: 3rem;
-            display: flex;
-            align-items: center;
-            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+        /* Tom Select Dark Mode Customization */
+        .ts-control {
+            background-color: #020617 !important; /* slate-950 */
+            border: 1px solid #1e293b !important; /* slate-800 */
+            color: #f8fafc !important; /* slate-50 */
+            border-radius: 0.75rem !important;
+            padding: 0.8rem 1rem !important;
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05) !important;
         }
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            color: #f8fafc; 
-            padding-left: 1rem;
-            font-size: 0.875rem;
+        .ts-control > input {
+            color: #f8fafc !important;
         }
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 100%;
-            right: 1rem;
-        }
-        .select2-dropdown {
-            background-color: #0f172a; 
-            border: 1px solid #1e293b;
-            border-radius: 0.75rem;
-            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+        .ts-dropdown {
+            background-color: #0f172a !important; /* slate-900 */
+            border: 1px solid #1e293b !important;
+            border-radius: 0.75rem !important;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25) !important;
+            color: #cbd5e1 !important; /* slate-300 */
+            margin-top: 0.5rem;
             overflow: hidden;
         }
-        .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
-            background-color: #06b6d4; 
-            color: white;
-        }
-        .select2-container--default .select2-results__option {
-            color: #cbd5e1; 
+        .ts-dropdown .option {
             padding: 0.75rem 1rem;
-            font-size: 0.875rem;
         }
-        .select2-container--default .select2-search--dropdown .select2-search__field {
-            background-color: #020617;
-            border: 1px solid #1e293b;
-            color: white;
-            border-radius: 0.5rem;
-            padding: 0.5rem;
-            outline: none;
+        .ts-dropdown .active {
+            background-color: #06b6d4 !important; /* cyan-500 */
+            color: white !important;
         }
-        .select2-container--default .select2-search--dropdown .select2-search__field:focus {
-            border-color: #06b6d4;
+        .ts-wrapper.single .ts-control:after {
+            border-color: #64748b transparent transparent transparent; /* slate-500 */
         }
     </style>
 </head>
@@ -184,39 +174,61 @@
     
     <x-footer />
     
+    <!-- Tambahkan SweetAlert CDN jika x-assets Anda belum melampirkannya -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> -->
+
     <script>
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         const sourceCharacterId = {{ $character->id }};
         
-        $(document).ready(function() {
-            $('#target_id').select2({
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Inisialisasi Tom Select
+            const targetSelect = new TomSelect('#target_id', {
+                valueField: 'id',
+                labelField: 'text',
+                searchField: 'text',
                 placeholder: 'Search for a character...',
-                minimumInputLength: 2,
-                ajax: {
-                    url: "{{ route('characters.list') }}",
-                    dataType: 'json',
-                    delay: 250,
-                    data: function (params) {
-                        return { q: params.term };
+                loadThrottle: 300,
+                
+                load: function(query, callback) {
+                    if (!query.length) return callback();
+                    
+                    fetch(`{{ route('characters.list') }}?q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(json => {
+                            const filteredData = json.filter(item => item.id != sourceCharacterId);
+                            callback(filteredData);
+                        })
+                        .catch(() => {
+                            callback();
+                        });
+                },
+                
+                render: {
+                    no_results: function(data, escape) {
+                        return '<div class="no-results px-4 py-3 text-slate-500 text-sm">No characters found for "'+escape(data.input)+'"</div>';
                     },
-                    processResults: function (data) {
-                        const filteredData = data.filter(item => item.id != sourceCharacterId);
-                        return { results: filteredData };
-                    },
-                    cache: true
+                    loading: function(data, escape) {
+                        return '<div class="loading px-4 py-3 text-cyan-500 text-sm">Searching...</div>';
+                    }
                 }
             });
 
-            $('#mergeFormAction').on('submit', async function(e) {
+            // Handle Submit Form
+            const form = document.getElementById('mergeFormAction');
+            form.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
-                const targetId = $('#target_id').val();
+                const targetId = targetSelect.getValue();
+                const confirmCheck = document.getElementById('confirm_merge').checked;
+
                 if (!targetId) {
                     Swal.fire('Error', 'Please select a target character.', 'error');
                     return;
                 }
 
-                if (!$('#confirm_merge').is(':checked')) {
+                if (!confirmCheck) {
                     Swal.fire('Warning', 'Please check the confirmation box.', 'warning');
                     return;
                 }
@@ -234,10 +246,11 @@
                 });
 
                 if (result.isConfirmed) {
-                    const btn = $('#btnSubmitMerge');
-                    const originalText = btn.html();
+                    const btn = document.getElementById('btnSubmitMerge');
+                    const originalText = btn.innerHTML;
                     
-                    btn.prop('disabled', true).html('<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...');
+                    btn.disabled = true;
+                    btn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...';
 
                     try {
                         const url = "{{ route('characters.merge', ['id' => $character->id]) }}";
@@ -278,7 +291,8 @@
                             confirmButtonColor: '#f43f5e',
                         });
                     } finally {
-                        btn.prop('disabled', false).html(originalText);
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
                     }
                 }
             });
