@@ -47,7 +47,6 @@
 
     {{-- Tombol aksi kiri atas --}}
     <div class="absolute top-3 left-3 flex flex-col gap-2 z-30 pointer-events-none">
-
         {{-- Debug --}}
         <button type="button" 
             x-data="{ isDebug: {{ $character->debug ? 'true' : 'false' }} }" 
@@ -71,7 +70,7 @@
             </svg>
         </a>
 
-        {{-- Delete --}}
+        {{-- Delete AJAX --}}
         <button type="button"
             @click.prevent.stop="deleteCharacter()"
             :disabled="deleting"
