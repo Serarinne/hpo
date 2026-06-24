@@ -1,14 +1,11 @@
 @php
-    // Optimasi: Panggil relasi first() sekali saja untuk mencegah multiple query/evaluation
     $firstSeries = $character->series->first();
     $seriesSlug = $firstSeries?->slug ?? 'unknown';
     $seriesName = $firstSeries?->name ?? '';
     
-    // Menggunakan helper Laravel Str untuk konsistensi dan keamanan string
     $firstLetter = Str::upper(Str::substr($character->name, 0, 1));
     $hasImage = !empty($character->image);
 
-    // Konfigurasi style dan teks untuk masing-masing tipe rating dengan tema Glassmorphism Glow
     $ratingStyles = [
         'general'      => ['text' => 'GEN', 'class' => 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]'],
         'sensitive'    => ['text' => 'SEN', 'class' => 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]'],
@@ -22,7 +19,7 @@
 
 <article class="break-inside-avoid block group relative rounded-[1.5rem] overflow-hidden border border-white/5 bg-slate-950 aspect-square shadow-lg hover:shadow-[0_0_25px_rgba(34,211,238,0.2)] hover:border-cyan-500/40 transform hover:-translate-y-1 transition-all duration-300 outline-none" title="{{ $character->name }}" aria-label="{{ $character->name }}" itemscope itemtype="https://schema.org/Person">
 
-    {{-- Link utama card diposisikan sebagai overlay (z-10) --}}
+    {{-- Link utama card diposisikan sebagai overlay --}}
     <a href="{{ route('characters.edit', ['id' => $character->id]) }}" class="absolute inset-0 z-10 outline-none"></a>
 
     {{-- Container Gambar / Fallback --}}
@@ -39,19 +36,53 @@
         @endif
     </div>
 
-    {{-- Tombol Debug (Kiri Atas, z-30 agar bisa diklik di atas link) --}}
+    {{-- Tombol aksi kiri atas --}}
     <div class="absolute top-3 left-3 flex flex-col gap-2 z-30 pointer-events-none">
+
+        {{-- Debug --}}
         <button type="button" 
             x-data="{ isDebug: {{ $character->debug ? 'true' : 'false' }} }" 
             @click.prevent.stop="isDebug = !isDebug; toggleDebug({{ $character->id }}, isDebug)" 
             class="pointer-events-auto w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none" 
             :class="isDebug ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-slate-900/60 text-slate-400 border-white/10 hover:border-cyan-500/40 hover:text-cyan-400 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]'" 
             title="Toggle Debug Mode">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg> 
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+            </svg> 
         </button>
+
+        {{-- Merge --}}
+        <a href="{{ route('characters.merge.form', ['id' => $character->id]) }}"
+           @click.stop
+           class="pointer-events-auto w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-violet-500/20 text-violet-400 border-violet-500/40 shadow-[0_0_15px_rgba(139,92,246,0.2)] hover:bg-violet-500/30 hover:border-violet-400/60 hover:scale-105"
+           title="Merge Character"
+           aria-label="Merge {{ $character->name }}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h3m5 0h-3M12 7v10m-4-4 4 4 4-4"></path>
+            </svg>
+        </a>
+
+        {{-- Delete --}}
+        <form action="{{ route('characters.delete', ['id' => $character->id]) }}"
+              method="POST"
+              class="pointer-events-auto"
+              onsubmit="return confirm('Hapus character {{ addslashes($character->name) }}?')">
+            @csrf
+            @method('DELETE')
+
+            <button type="submit"
+                @click.stop
+                class="w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)] hover:bg-rose-500/30 hover:border-rose-400/60 hover:scale-105"
+                title="Delete Character"
+                aria-label="Delete {{ $character->name }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0l1 12a1 1 0 001 1h6a1 1 0 001-1l1-12"></path>
+                </svg>
+            </button>
+        </form>
     </div>
 
-    {{-- Tombol Ubah Rating (Kanan Atas, z-30) --}}
+    {{-- Tombol Ubah Rating --}}
     <div class="absolute top-3 right-3 z-30 pointer-events-auto">
         <button type="button" 
             x-data 

@@ -492,7 +492,7 @@ class CharacterController extends Controller
             }
             
             // 10. Eksekusi Hapus Character Source
-            $source->delete();
+            $source->forceDelete();
 
             DB::commit();
 
