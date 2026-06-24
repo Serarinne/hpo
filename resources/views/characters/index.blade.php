@@ -294,7 +294,7 @@
                     <button
                         type="button"
                         @click="clearSelection"
-                        :disabled="selectedCount === 0 || bulkDeleting"
+                        :disabled="selectedCount === 0 || $store.bulkAction.deleting"
                         class="px-4 py-2 rounded-xl bg-slate-800 border border-white/10 text-slate-300 font-semibold transition hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Clear Selection
@@ -302,12 +302,12 @@
 
                     <button
                         type="button"
-                        @click="bulkDelete"
-                        :disabled="selectedCount === 0 || bulkDeleting"
+                        @click="bulkDelete($event)"
+                        :disabled="selectedCount === 0 || $store.bulkAction.deleting"
                         class="px-5 py-2 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 font-bold transition hover:bg-rose-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <span x-show="!bulkDeleting">Delete Selected</span>
-                        <span x-show="bulkDeleting">Deleting...</span>
+                        <span x-show="!$store.bulkAction.deleting">Delete Selected</span>
+                        <span x-show="$store.bulkAction.deleting">Deleting...</span>
                     </button>
                 </div>
             </div>
@@ -319,16 +319,6 @@
                         $seriesName = $firstSeries?->name ?? '';
                         $firstLetter = \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($character->name, 0, 1));
                         $hasImage = !empty($character->image);
-
-                        $ratingStyles = [
-                            'general'      => ['text' => 'GEN', 'class' => 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]'],
-                            'sensitive'    => ['text' => 'SEN', 'class' => 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]'],
-                            'questionable' => ['text' => 'QST', 'class' => 'bg-orange-500/20 text-orange-400 border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.2)]'],
-                            'explicit'     => ['text' => 'EXP', 'class' => 'bg-rose-500/20 text-rose-400 border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.2)]'],
-                            'unknown'      => ['text' => 'UNK', 'class' => 'bg-slate-500/20 text-slate-300 border-slate-500/30 shadow-[0_0_15px_rgba(100,116,139,0.2)]'],
-                        ];
-
-                        $currentRating = $ratingStyles[$character->rating] ?? $ratingStyles['unknown'];
                     @endphp
 
                     <article
@@ -341,7 +331,7 @@
                             rating: @js($character->rating ?? 'unknown')
                         })"
                         class="break-inside-avoid group relative rounded-[1.5rem] overflow-hidden border border-white/5 bg-slate-950 aspect-square shadow-lg hover:shadow-[0_0_25px_rgba(34,211,238,0.2)] hover:border-cyan-500/40 transform hover:-translate-y-1 transition-all duration-300 outline-none"
-                        :class="$store.selection?.ids?.includes({{ $character->id }}) ? 'ring-2 ring-cyan-500/60 border-cyan-500/40' : ''"
+                        :class="$store.selection.ids.includes({{ $character->id }}) ? 'ring-2 ring-cyan-500/60 border-cyan-500/40' : ''"
                         title="{{ $character->name }}"
                         aria-label="{{ $character->name }}"
                         itemscope
@@ -353,7 +343,7 @@
                             aria-label="Edit {{ $character->name }}"
                         ></a>
 
-                        <div class="absolute top-3 left-3 z-40">
+                        <div class="absolute top-3 left-3 z-40 flex flex-col gap-2">
                             <label
                                 class="w-9 h-9 rounded-xl border border-white/10 bg-slate-900/80 backdrop-blur-md flex items-center justify-center cursor-pointer hover:border-cyan-500/40 transition"
                                 @click.stop
@@ -365,35 +355,26 @@
                                     @change.stop="$store.selection.toggle({{ $character->id }})"
                                 >
                             </label>
+
+                            <button
+                                type="button"
+                                @click.prevent.stop="openRatingPicker"
+                                :disabled="isBusy || isDeleting || bulkDeletingGlobal()"
+                                class="h-10 px-3 rounded-xl border backdrop-blur-md transition-all duration-300 flex items-center justify-center font-black text-[10px] uppercase tracking-widest outline-none hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                :class="ratingBadgeClass"
+                                :data-rating="rating"
+                                :aria-label="'Change rating for ' + name"
+                                title="Change Rating"
+                            >
+                                <span class="drop-shadow-md" x-text="ratingLabel"></span>
+                            </button>
                         </div>
 
-                        <div class="absolute inset-0 z-0 {{ !$hasImage ? 'flex justify-center items-center p-6 bg-slate-900/50 backdrop-blur-sm' : 'bg-slate-950' }}">
-                            @if($hasImage)
-                                <picture class="w-full h-full block group-hover:scale-110 transition-transform duration-700 ease-out transform-gpu">
-                                    <source srcset="{{ $character->image['webp'] }}" type="image/webp">
-                                    <img
-                                        itemprop="image"
-                                        src="{{ $character->image['jpg'] }}"
-                                        alt="{{ $character->name }}"
-                                        loading="lazy"
-                                        decoding="async"
-                                        width="400"
-                                        height="400"
-                                        class="w-full h-full object-cover"
-                                    />
-                                </picture>
-                            @else
-                                <div class="w-20 h-20 bg-cyan-500/10 border border-cyan-500/30 rounded-[1.25rem] flex items-center justify-center text-cyan-400 font-black text-4xl uppercase shadow-[inset_0_0_20px_rgba(34,211,238,0.1)] group-hover:shadow-[inset_0_0_30px_rgba(34,211,238,0.3)] group-hover:bg-cyan-500/20 transition-all duration-500" aria-hidden="true">
-                                    {{ $firstLetter }}
-                                </div>
-                            @endif
-                        </div>
-
-                        <div class="absolute top-14 left-3 flex flex-col gap-2 z-30">
+                        <div class="absolute top-3 right-3 flex flex-col gap-2 z-30">
                             <button
                                 type="button"
                                 @click.prevent.stop="toggleDebug"
-                                :disabled="isBusy || isDeleting"
+                                :disabled="isBusy || isDeleting || bulkDeletingGlobal()"
                                 class="w-10 h-10 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 :class="debug
                                     ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
@@ -432,19 +413,26 @@
                             </button>
                         </div>
 
-                        <div class="absolute top-3 right-3 z-30">
-                            <button
-                                type="button"
-                                @click.prevent.stop="openRatingPicker"
-                                :disabled="isBusy || isDeleting || bulkDeletingGlobal()"
-                                class="h-10 px-3 rounded-xl border backdrop-blur-md transition-all duration-300 flex items-center justify-center font-black text-[10px] uppercase tracking-widest outline-none hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                                :class="ratingBadgeClass"
-                                :data-rating="rating"
-                                :aria-label="'Change rating for ' + name"
-                                title="Change Rating"
-                            >
-                                <span class="drop-shadow-md" x-text="ratingLabel"></span>
-                            </button>
+                        <div class="absolute inset-0 z-0 {{ !$hasImage ? 'flex justify-center items-center p-6 bg-slate-900/50 backdrop-blur-sm' : 'bg-slate-950' }}">
+                            @if($hasImage)
+                                <picture class="w-full h-full block group-hover:scale-110 transition-transform duration-700 ease-out transform-gpu">
+                                    <source srcset="{{ $character->image['webp'] }}" type="image/webp">
+                                    <img
+                                        itemprop="image"
+                                        src="{{ $character->image['jpg'] }}"
+                                        alt="{{ $character->name }}"
+                                        loading="lazy"
+                                        decoding="async"
+                                        width="400"
+                                        height="400"
+                                        class="w-full h-full object-cover"
+                                    />
+                                </picture>
+                            @else
+                                <div class="w-20 h-20 bg-cyan-500/10 border border-cyan-500/30 rounded-[1.25rem] flex items-center justify-center text-cyan-400 font-black text-4xl uppercase shadow-[inset_0_0_20px_rgba(34,211,238,0.1)] group-hover:shadow-[inset_0_0_30px_rgba(34,211,238,0.3)] group-hover:bg-cyan-500/20 transition-all duration-500" aria-hidden="true">
+                                    {{ $firstLetter }}
+                                </div>
+                            @endif
                         </div>
 
                         <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent pointer-events-none z-10 opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -511,12 +499,14 @@
                     this.ids = this.ids.filter(item => item !== id);
                 }
             });
+
+            Alpine.store('bulkAction', {
+                deleting: false,
+            });
         });
 
         function characterListManager() {
             return {
-                bulkDeleting: false,
-
                 get pageIds() {
                     return Array.from(document.querySelectorAll('[data-character-id]'))
                         .map(el => Number(el.dataset.characterId))
@@ -572,12 +562,18 @@
                     return data;
                 },
 
-                async bulkDelete() {
+                async bulkDelete(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    if (typeof event.stopImmediatePropagation === 'function') {
+                        event.stopImmediatePropagation();
+                    }
+
                     const selectedIds = [...Alpine.store('selection').ids];
+                    if (Alpine.store('bulkAction').deleting || selectedIds.length === 0) return;
 
-                    if (this.bulkDeleting || selectedIds.length === 0) return;
-
-                    this.bulkDeleting = true;
+                    Alpine.store('bulkAction').deleting = true;
 
                     try {
                         const result = await Swal.fire({
@@ -593,6 +589,7 @@
                             showLoaderOnConfirm: true,
                             allowOutsideClick: () => !Swal.isLoading(),
                             allowEscapeKey: () => !Swal.isLoading(),
+                            focusCancel: true,
                             preConfirm: async () => {
                                 try {
                                     return await this.request(`{{ route('characters.bulk-delete') }}`, 'DELETE', {
@@ -600,18 +597,15 @@
                                     });
                                 } catch (error) {
                                     Swal.showValidationMessage(error.message || 'Failed to delete selected characters.');
-                                    throw error;
+                                    return false;
                                 }
                             }
                         });
 
-                        if (!result.isConfirmed) {
-                            return;
-                        }
+                        if (!result.isConfirmed) return;
 
                         selectedIds.forEach(id => {
-                            const card = document.getElementById(`character-card-${id}`);
-                            if (card) card.remove();
+                            document.getElementById(`character-card-${id}`)?.remove();
                             Alpine.store('selection').remove(id);
                         });
 
@@ -625,7 +619,7 @@
                             color: '#e2e8f0',
                         });
                     } finally {
-                        this.bulkDeleting = false;
+                        Alpine.store('bulkAction').deleting = false;
                     }
                 }
             };
@@ -674,8 +668,7 @@
                 },
 
                 bulkDeletingGlobal() {
-                    const root = document.querySelector('main[x-data]');
-                    return root && root.__x ? root.__x.$data.bulkDeleting : false;
+                    return Alpine.store('bulkAction').deleting;
                 },
 
                 async request(url, method = 'PATCH', body = null) {
@@ -810,17 +803,14 @@
                                     return await this.request(`{{ url('characters') }}/${this.id}`, 'DELETE');
                                 } catch (error) {
                                     Swal.showValidationMessage(error.message || 'Failed to delete character.');
-                                    throw error;
+                                    return false;
                                 }
                             }
                         });
 
-                        if (!result.isConfirmed) {
-                            return;
-                        }
+                        if (!result.isConfirmed) return;
 
-                        const card = document.getElementById(`character-card-${this.id}`);
-                        card?.remove();
+                        document.getElementById(`character-card-${this.id}`)?.remove();
                         Alpine.store('selection').remove(this.id);
 
                         await Swal.fire({
