@@ -17,8 +17,10 @@
     $currentRating = $ratingStyles[$character->rating] ?? $ratingStyles['unknown'];
 @endphp
 
+<!-- x-data ditambahkan di tag article agar seluruh isi card terdeteksi oleh Alpine.js -->
 <article
     id="character-card-{{ $character->id }}"
+    x-data="{ isDebug: {{ $character->debug ? 'true' : 'false' }} }"
     class="break-inside-avoid block group relative rounded-[1.5rem] overflow-hidden border border-white/5 bg-slate-950 aspect-square shadow-lg hover:shadow-[0_0_25px_rgba(34,211,238,0.2)] hover:border-cyan-500/40 transform hover:-translate-y-1 transition-all duration-300 outline-none"
     title="{{ $character->name }}"
     aria-label="{{ $character->name }}"
@@ -42,7 +44,6 @@
 
     <div class="absolute top-3 left-3 flex flex-col gap-2 z-30 pointer-events-none">
         <button type="button" 
-            x-data="{ isDebug: {{ $character->debug ? 'true' : 'false' }} }" 
             @click.prevent.stop="isDebug = !isDebug; toggleDebug({{ $character->id }}, isDebug)" 
             class="pointer-events-auto w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none" 
             :class="isDebug ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-slate-900/60 text-slate-400 border-white/10 hover:border-cyan-500/40 hover:text-cyan-400 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]'" 
