@@ -15,4 +15,11 @@ class FetchedWallpaper extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    protected function isVideo(): Attribute
+    {
+        return Attribute::make(
+            get: fn (mixed $value, array $attributes) => str_starts_with($attributes['file_type'] ?? '', 'mp4')
+        );
+    }
 }
