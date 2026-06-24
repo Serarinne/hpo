@@ -17,8 +17,17 @@
     $currentRating = $ratingStyles[$character->rating] ?? $ratingStyles['unknown'];
 @endphp
 
-<article class="break-inside-avoid block group relative rounded-[1.5rem] overflow-hidden border border-white/5 bg-slate-950 aspect-square shadow-lg hover:shadow-[0_0_25px_rgba(34,211,238,0.2)] hover:border-cyan-500/40 transform hover:-translate-y-1 transition-all duration-300 outline-none" title="{{ $character->name }}" aria-label="{{ $character->name }}" itemscope itemtype="https://schema.org/Person">
-
+<article
+    id="character-card-{{ $character->id }}"
+    x-data="characterCard({{ $character->id }}, @js($character->name))"
+    x-show="visible"
+    x-transition.opacity.duration.300ms
+    class="break-inside-avoid block group relative rounded-[1.5rem] overflow-hidden border border-white/5 bg-slate-950 aspect-square shadow-lg hover:shadow-[0_0_25px_rgba(34,211,238,0.2)] hover:border-cyan-500/40 transform hover:-translate-y-1 transition-all duration-300 outline-none"
+    title="{{ $character->name }}"
+    aria-label="{{ $character->name }}"
+    itemscope
+    itemtype="https://schema.org/Person"
+>
     {{-- Link utama card diposisikan sebagai overlay --}}
     <a href="{{ route('characters.edit', ['id' => $character->id]) }}" class="absolute inset-0 z-10 outline-none"></a>
 
@@ -63,23 +72,21 @@
         </a>
 
         {{-- Delete --}}
-        <form action="{{ route('characters.delete', ['id' => $character->id]) }}"
-              method="POST"
-              class="pointer-events-auto"
-              onsubmit="return confirm('Hapus character {{ addslashes($character->name) }}?')">
-            @csrf
-            @method('DELETE')
+        <button type="button"
+            @click.prevent.stop="deleteCharacter()"
+            :disabled="deleting"
+            class="pointer-events-auto w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)] hover:bg-rose-500/30 hover:border-rose-400/60 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Delete Character"
+            :aria-label="deleting ? 'Deleting character' : 'Delete {{ $character->name }}'">
+            <svg x-show="!deleting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0l1 12a1 1 0 001 1h6a1 1 0 001-1l1-12"></path>
+            </svg>
 
-            <button type="submit"
-                @click.stop
-                class="w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)] hover:bg-rose-500/30 hover:border-rose-400/60 hover:scale-105"
-                title="Delete Character"
-                aria-label="Delete {{ $character->name }}">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0l1 12a1 1 0 001 1h6a1 1 0 001-1l1-12"></path>
-                </svg>
-            </button>
-        </form>
+            <svg x-show="deleting" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
+                <path fill="currentColor" class="opacity-75" d="M12 2a10 10 0 0 1 10 10h-3a7 7 0 0 0-7-7V2z"></path>
+            </svg>
+        </button>
     </div>
 
     {{-- Tombol Ubah Rating --}}

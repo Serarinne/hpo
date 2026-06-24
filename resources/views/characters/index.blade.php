@@ -265,6 +265,92 @@
         }
     </script>
     <script>
+    window.characterCard = function(characterId, characterName) {
+        return {
+            visible: true,
+            deleting: false,
+
+            async deleteCharacter() {
+                if (this.deleting) return;
+
+                const result = await Swal.fire({
+                    title: 'Delete Character?',
+                    text: `Character "${characterName}" and its relationships will be permanently deleted.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#f43f5e',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Yes, delete it',
+                    cancelButtonText: 'Cancel',
+                    reverseButtons: true,
+                    background: '#0f172a',
+                    color: '#e2e8f0'
+                });
+
+                if (!result.isConfirmed) return;
+
+                this.deleting = true;
+
+                try {
+                    const urlTemplate = "{{ route('characters.delete', ['id' => '__ID__']) }}";
+                    const url = urlTemplate.replace('__ID__', characterId);
+
+                    const response = await fetch(url, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.message || 'Failed to delete character.');
+                    }
+
+                    this.visible = false;
+
+                    setTimeout(() => {
+                        const el = document.getElementById(`character-card-${characterId}`);
+                        if (el) el.remove();
+                    }, 320);
+
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: data.message,
+                        showConfirmButton: false,
+                        timer: 2200,
+                        timerProgressBar: true,
+                        background: '#022c22',
+                        color: '#d1fae5'
+                    });
+                } catch (error) {
+                    console.error('Delete error:', error);
+
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: error.message || 'Failed to delete character.',
+                        showConfirmButton: false,
+                        timer: 2600,
+                        timerProgressBar: true,
+                        background: '#450a0a',
+                        color: '#fee2e2'
+                    });
+                } finally {
+                    this.deleting = false;
+                }
+            }
+        };
+    };
+</script>
+    <script>
         document.addEventListener('click', function(event) {
             const dropdowns = document.querySelectorAll('details.custom-dropdown');
             dropdowns.forEach((details) => {

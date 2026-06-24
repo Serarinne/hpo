@@ -222,11 +222,19 @@ class CharacterController extends Controller
         }
     }
 
-    public function delete($id)
+    public function delete(Request $request, $id)
     {
         $character = Character::findOrFail($id);
         $characterName = $character->name;
         $character->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Character ' . $characterName . ' and its relationships have been permanently deleted.',
+                'id' => $id,
+            ]);
+        }
 
         return redirect()->route('characters.index')
             ->with('success', 'Character ' . $characterName . ' and its relationships have been permanently deleted.');
