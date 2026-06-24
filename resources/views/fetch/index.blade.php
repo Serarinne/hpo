@@ -133,7 +133,6 @@
             </div>
 
             <form method="GET" action="{{ url()->current() }}" class="relative mb-8 z-30 group">
-                
                 <div class="absolute inset-0 bg-slate-900/60 border border-white/10 rounded-[2rem] shadow-xl backdrop-blur-md overflow-hidden pointer-events-none z-0">
                     <div class="absolute -top-24 -right-24 w-48 h-48 bg-cyan-500/10 blur-[80px] group-hover:bg-cyan-500/20 transition-colors"></div>
                 </div>
@@ -187,56 +186,83 @@
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-slate-950/80 border-b border-white/5 text-slate-400 text-[10px] uppercase tracking-widest font-bold">
-                                <th class="px-6 py-5">ID</th>
-                                <th class="px-6 py-5">Tag Name & Source</th>
-                                <th class="px-6 py-5">Page & Last Source ID</th>
+                                <th class="px-6 py-5">ID & Timeline</th>
+                                <th class="px-6 py-5">Tag Target</th>
+                                <th class="px-6 py-5">Progress & Checkpoint</th>
                                 <th class="px-6 py-5">Status</th>
-                                <th class="px-6 py-5">Timing</th>
+                                <th class="px-6 py-5">Activity Info</th>
                                 <th class="px-6 py-5 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/5">
                             @forelse($tasks as $task)
+                            
+                            @php
+                                // Cek apakah task mungkin stuck (berjalan tapi > 10 menit tidak update)
+                                $isStuck = in_array(strtolower($task->status), ['running', 'rerunning']) 
+                                           && $task->last_run_at 
+                                           && \Carbon\Carbon::parse($task->last_run_at)->diffInMinutes(now()) > 10;
+                            @endphp
+
                             <tr class="hover:bg-white/[0.02] transition-colors group">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-mono font-bold">#{{ $task->id }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex flex-col gap-1">
+                                        <span class="text-sm text-slate-300 font-mono font-bold">#{{ $task->id }}</span>
+                                        <span class="text-[10px] text-slate-500" title="{{ $task->created_at }}">Added: {{ $task->created_at->format('M d, Y') }}</span>
+                                    </div>
+                                </td>
+                                
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex flex-col gap-1.5">
                                         <span class="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">{{ $task->tag_name }}</span>
                                         <span class="inline-flex w-fit items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-black text-pink-400 bg-pink-500/10 border border-pink-500/20 uppercase tracking-widest">{{ $task->source_api }}</span>
                                     </div>
                                 </td>
+                                
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex flex-col gap-1.5 text-sm text-slate-400">
                                         <span class="font-medium">Page: <strong class="text-white bg-white/10 px-2 py-0.5 rounded ml-1">{{ $task->current_page }}</strong></span>
-                                        <span class="text-xs font-mono">ID: {{ $task->last_source_id ?? '0' }}</span>
+                                        <span class="text-xs font-mono text-slate-500">ID: {{ $task->last_source_id ?? 'None' }}</span>
                                     </div>
                                 </td>
+                                
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    @if(strtolower($task->status) === 'completed')
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20 uppercase tracking-wider"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span> Completed</span>
-                                    @elseif(in_array(strtolower($task->status), ['running', 'rerunning']))
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 text-[10px] font-bold border border-blue-500/20 uppercase tracking-wider"><span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping shadow-[0_0_8px_rgba(59,130,246,0.8)]"></span> {{ $task->status }}</span>
-                                    @elseif(strtolower($task->status) === 'failed')
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-400 text-[10px] font-bold border border-rose-500/20 uppercase tracking-wider"><span class="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]"></span> Failed</span>
-                                    @else
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 text-[10px] font-bold border border-cyan-500/20 uppercase tracking-wider"><span class="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></span> Pending</span>
-                                    @endif
+                                    <div class="flex flex-col gap-1.5 items-start">
+                                        @if(strtolower($task->status) === 'completed')
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20 uppercase tracking-wider"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span> Completed</span>
+                                        @elseif(in_array(strtolower($task->status), ['running', 'rerunning']))
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 text-[10px] font-bold border border-blue-500/20 uppercase tracking-wider"><span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping shadow-[0_0_8px_rgba(59,130,246,0.8)]"></span> {{ $task->status }}</span>
+                                        @elseif(strtolower($task->status) === 'failed')
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-400 text-[10px] font-bold border border-rose-500/20 uppercase tracking-wider"><span class="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]"></span> Failed</span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 text-[10px] font-bold border border-cyan-500/20 uppercase tracking-wider"><span class="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></span> Pending</span>
+                                        @endif
+                                        
+                                        @if($isStuck)
+                                            <span class="text-[9px] font-bold text-rose-400 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Stuck?</span>
+                                        @endif
+                                    </div>
                                 </td>
+                                
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex flex-col gap-1 text-[11px] font-medium">
+                                    <div class="flex flex-col gap-1.5 text-[11px] font-medium">
                                         @if($task->last_run_at)
-                                            <span class="text-slate-300">Run: <span class="text-cyan-400">{{ \Carbon\Carbon::parse($task->last_run_at)->diffForHumans() }}</span></span>
+                                            <span class="text-slate-300" title="{{ $task->last_run_at }}">Run: <span class="text-cyan-400">{{ \Carbon\Carbon::parse($task->last_run_at)->diffForHumans() }}</span></span>
                                         @else
                                             <span class="text-slate-500">Run: Never</span>
                                         @endif
-                                        <span class="text-slate-500">Barrier: {{ $task->last_post_date ? \Carbon\Carbon::parse($task->last_post_date)->format('Y-m-d') : 'None' }}</span>
+                                        
+                                        <span class="text-slate-400" title="{{ $task->updated_at }}">Updated: {{ \Carbon\Carbon::parse($task->updated_at)->diffForHumans() }}</span>
+                                        
+                                        <span class="text-slate-500 mt-1" title="Postingan terbaca paling baru">Barrier: {{ $task->last_post_date ? \Carbon\Carbon::parse($task->last_post_date)->format('d M Y') : 'No Barrier' }}</span>
                                     </div>
                                 </td>
+                                
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     <div class="flex items-center justify-end gap-2">
                                         <form action="{{ route('fetch-tasks.reset', ['id' => $task->id]) }}" method="POST" onsubmit="return confirm('Reset task: {{ $task->tag_name }}?');" class="inline-block">
                                             @csrf
-                                            <button type="submit" class="p-2 text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/20 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-cyan-500/30" title="Reset Task">
+                                            <button type="submit" class="p-2 text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/20 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-cyan-500/30" title="Reset Task to Pending">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                                             </button>
                                         </form>
