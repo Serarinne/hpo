@@ -370,7 +370,7 @@ class CharacterController extends Controller
         return $content;
     }
 
-        public function mergeForm($id)
+    public function mergeForm($id)
     {
         $character = Character::with(['series', 'parents', 'apiTags'])->findOrFail($id);
 
@@ -416,7 +416,7 @@ class CharacterController extends Controller
             // 3. Merge parent relationships (pivot: character_relationships)
             $sourceParents = $source->parents()->withPivot('relation_type')->get();
             foreach ($sourceParents as $parent) {
-                if ($parent->id === $target->id) continue; // Hindari self-loop
+                if ($parent->id === $target->id) continue;
 
                 if (!$target->parents()->where('parent_id', $parent->id)->exists()) {
                     $target->parents()->attach($parent->id, [
@@ -428,7 +428,7 @@ class CharacterController extends Controller
             // 4. Merge children relationships (pivot: character_relationships)
             $sourceChildren = $source->children()->withPivot('relation_type')->get();
             foreach ($sourceChildren as $child) {
-                if ($child->id === $target->id) continue; // Hindari self-loop
+                if ($child->id === $target->id) continue;
 
                 if (!$target->children()->where('child_id', $child->id)->exists()) {
                     $target->children()->attach($child->id, [
@@ -459,20 +459,13 @@ class CharacterController extends Controller
 
             // 6. Recalculate DataCount untuk target
             $actualWallpaperCount = $target->wallpapers()->count();
-            \App\Models\DataCount::updateOrCreate(
-                [
-                    'type' => 'character',
-                    'data_id' => $target->id
-                ],
-                [
-                    'total' => $actualWallpaperCount
-                ]
+            DataCount::updateOrCreate(
+                ['type' => 'character', 'data_id' => $target->id],
+                ['total' => $actualWallpaperCount]
             );
 
             // 7. Hapus DataCount milik source
-            \App\Models\DataCount::where('type', 'character')
-                ->where('data_id', $source->id)
-                ->delete();
+            DataCount::where('type', 'character')->where('data_id', $source->id)->delete();
 
             // 8. Bersihkan semua relasi source sebelum delete
             $source->wallpapers()->detach();
@@ -481,7 +474,24 @@ class CharacterController extends Controller
             $source->children()->detach();
             $source->apiTags()->delete();
             
-            // 9. Eksekusi Hapus Character Source
+            // 9. Hapus gambar dari CDN jika ada
+            if (!empty($source->image) && $bunny = $this->getBunnyStorage()) {
+                try {
+                    if (is_array($source->image)) {
+                        $oldWebp = $source->image['webp'] ?? null;
+                        $oldJpg = $source->image['jpg'] ?? null;
+                        if ($oldWebp) $bunny->delete(str_replace('/storage/', '', $oldWebp));
+                        if ($oldJpg) $bunny->delete(str_replace('/storage/', '', $oldJpg));
+                    } else {
+                        $bunny->delete($source->image . '.webp');
+                        $bunny->delete($source->image . '.jpg');
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Failed to delete merged character image from BunnyCDN: ' . $e->getMessage());
+                }
+            }
+            
+            // 10. Eksekusi Hapus Character Source
             $source->delete();
 
             DB::commit();

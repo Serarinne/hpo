@@ -7,25 +7,21 @@
     <title>Merge Character - {{ env('APP_NAME') }}</title>
     <x-assets />
     
-    <!-- Pastikan Anda sudah memuat Select2 & jQuery di layout/komponen Anda. Jika belum, tambahkan: -->
-    <!-- <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" /> -->
-    
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Kustomisasi Select2 agar sesuai dengan tema Dark Mode Slate */
         .select2-container--default .select2-selection--single {
-            background-color: #020617; /* slate-950 */
-            border: 1px solid #1e293b; /* slate-800 */
-            border-radius: 0.75rem; /* rounded-xl */
+            background-color: #020617; 
+            border: 1px solid #1e293b; 
+            border-radius: 0.75rem; 
             height: 3rem;
             display: flex;
             align-items: center;
             box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
         }
         .select2-container--default .select2-selection--single .select2-selection__rendered {
-            color: #f8fafc; /* slate-50 */
+            color: #f8fafc; 
             padding-left: 1rem;
             font-size: 0.875rem;
         }
@@ -34,18 +30,18 @@
             right: 1rem;
         }
         .select2-dropdown {
-            background-color: #0f172a; /* slate-900 */
+            background-color: #0f172a; 
             border: 1px solid #1e293b;
             border-radius: 0.75rem;
             box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
             overflow: hidden;
         }
         .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
-            background-color: #06b6d4; /* cyan-500 */
+            background-color: #06b6d4; 
             color: white;
         }
         .select2-container--default .select2-results__option {
-            color: #cbd5e1; /* slate-300 */
+            color: #cbd5e1; 
             padding: 0.75rem 1rem;
             font-size: 0.875rem;
         }
@@ -66,7 +62,6 @@
     <x-navbar />
     
     <main class="flex-grow pt-8 pb-32 sm:pt-12 relative overflow-hidden text-slate-300">
-        <!-- Background Orbs -->
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-cyan-500/10 blur-[120px] pointer-events-none rounded-full" aria-hidden="true"></div>
         <div class="absolute bottom-0 right-0 w-[500px] h-[500px] bg-rose-500/5 blur-[120px] pointer-events-none rounded-full" aria-hidden="true"></div>
 
@@ -93,7 +88,6 @@
                 </div>
             </div>
 
-            <!-- Warning Alert -->
             <div class="mb-8 bg-rose-500/10 border border-rose-500/30 rounded-2xl p-5 flex gap-4 items-start shadow-inner backdrop-blur-sm">
                 <div class="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
                     <svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
@@ -107,8 +101,6 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-30 group">
-                
-                <!-- Source Character Card -->
                 <div class="relative">
                     <div class="absolute inset-0 bg-slate-900/60 border border-rose-500/20 rounded-[2rem] shadow-xl backdrop-blur-md overflow-hidden pointer-events-none z-0">
                         <div class="absolute -top-24 -left-24 w-48 h-48 bg-rose-500/10 blur-[80px] transition-colors"></div>
@@ -145,7 +137,6 @@
                     </div>
                 </div>
 
-                <!-- Target Character Form -->
                 <div class="relative">
                     <div class="absolute inset-0 bg-slate-900/60 border border-cyan-500/20 rounded-[2rem] shadow-xl backdrop-blur-md overflow-hidden pointer-events-none z-0">
                         <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-cyan-500/10 blur-[80px] transition-colors"></div>
@@ -187,48 +178,35 @@
                         </form>
                     </div>
                 </div>
-
             </div>
         </div>
     </main>
     
     <x-footer />
     
-    <!-- Pastikan file script dari SweetAlert dan Select2 termuat, hapus jika sudah ada di x-assets -->
-    <!-- <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> -->
-
     <script>
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         const sourceCharacterId = {{ $character->id }};
         
         $(document).ready(function() {
-            // Initialize Select2 untuk pencarian karakter target
             $('#target_id').select2({
                 placeholder: 'Search for a character...',
                 minimumInputLength: 2,
                 ajax: {
-                    url: "{{ route('characters.list') }}", // Menggunakan endpoint API yang sudah ada
+                    url: "{{ route('characters.list') }}",
                     dataType: 'json',
                     delay: 250,
                     data: function (params) {
-                        return {
-                            q: params.term // Sesuai dengan controller list(Request $request) -> $request->get('q')
-                        };
+                        return { q: params.term };
                     },
                     processResults: function (data) {
-                        // Filter agar character source tidak muncul di dropdown target
                         const filteredData = data.filter(item => item.id != sourceCharacterId);
-                        return {
-                            results: filteredData
-                        };
+                        return { results: filteredData };
                     },
                     cache: true
                 }
             });
 
-            // Handle Submit Form
             $('#mergeFormAction').on('submit', async function(e) {
                 e.preventDefault();
                 
@@ -243,14 +221,13 @@
                     return;
                 }
 
-                // Konfirmasi terakhir sebelum eksekusi
                 const result = await Swal.fire({
                     title: 'Are you absolutely sure?',
                     text: "You are about to merge and delete the source character. This cannot be undone!",
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonColor: '#f43f5e', // rose-500
-                    cancelButtonColor: '#334155', // slate-700
+                    confirmButtonColor: '#f43f5e', 
+                    cancelButtonColor: '#334155', 
                     confirmButtonText: 'Yes, Execute Merge',
                     background: '#0f172a',
                     color: '#f8fafc',
@@ -260,7 +237,6 @@
                     const btn = $('#btnSubmitMerge');
                     const originalText = btn.html();
                     
-                    // Loading state UI
                     btn.prop('disabled', true).html('<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...');
 
                     try {
@@ -287,7 +263,6 @@
                                 color: '#f8fafc',
                                 confirmButtonColor: '#0ea5e9',
                             });
-                            // Redirect ke halaman index character setelah sukses
                             window.location.href = "{{ route('characters.index') }}";
                         } else {
                             throw new Error(data.message || 'Validation or Server Error');
