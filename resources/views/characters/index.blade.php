@@ -12,10 +12,13 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .break-inside-avoid { break-inside: avoid; }
-        .card-hover { transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease; }
-        .card-hover:hover { transform: translateY(-4px); border-color: rgba(34, 211, 238, 0.28); box-shadow: 0 14px 30px rgba(0,0,0,0.25); }
-        summary::-webkit-details-marker { display: none; }
-        .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+        .line-clamp-1 {
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
         details.custom-dropdown > summary { list-style: none; }
         details.custom-dropdown > summary::-webkit-details-marker { display: none; }
 
@@ -71,7 +74,7 @@
                 </div>
             </div>
 
-            <form method="GET" action="{{ url()->current() }}" class="relative mb-8 z-30 group">
+            <form method="GET" action="{{ route('characters.index') }}" class="relative mb-8 z-30 group">
                 <div class="absolute inset-0 bg-slate-900/60 border border-white/10 rounded-[2rem] shadow-xl backdrop-blur-md overflow-hidden pointer-events-none z-0">
                     <div class="absolute -top-24 -right-24 w-48 h-48 bg-cyan-500/10 blur-[80px] group-hover:bg-cyan-500/20 transition-colors"></div>
                 </div>
@@ -109,7 +112,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </summary>
-
                                 <div class="absolute top-full left-0 z-50 w-full mt-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-2 flex flex-col gap-1 max-h-60 overflow-y-auto">
                                     @foreach(['general', 'sensitive', 'questionable', 'explicit', 'unknown'] as $rating)
                                         <label class="flex items-center gap-3 px-3 py-2 hover:bg-slate-800/50 rounded-lg cursor-pointer transition-colors">
@@ -139,7 +141,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </summary>
-
                                 <div class="absolute top-full left-0 z-50 w-full mt-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-2 flex flex-col gap-1">
                                     @foreach(['filled', 'empty'] as $seo)
                                         <label class="flex items-center gap-3 px-3 py-2 hover:bg-slate-800/50 rounded-lg cursor-pointer transition-colors">
@@ -169,7 +170,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </summary>
-
                                 <div class="absolute top-full left-0 z-50 w-full mt-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-2 flex flex-col gap-1">
                                     @foreach(['debug', 'ready'] as $workflow)
                                         <label class="flex items-center gap-3 px-3 py-2 hover:bg-slate-800/50 rounded-lg cursor-pointer transition-colors">
@@ -199,7 +199,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </summary>
-
                                 <div class="absolute top-full left-0 z-50 w-full mt-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-2 flex flex-col gap-1">
                                     @foreach(['yes', 'no'] as $status)
                                         <label class="flex items-center gap-3 px-3 py-2 hover:bg-slate-800/50 rounded-lg cursor-pointer transition-colors">
@@ -229,7 +228,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </summary>
-
                                 <div class="absolute top-full left-0 z-50 w-full mt-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-2 flex flex-col gap-1">
                                     @foreach(['yes', 'no'] as $status)
                                         <label class="flex items-center gap-3 px-3 py-2 hover:bg-slate-800/50 rounded-lg cursor-pointer transition-colors">
@@ -299,7 +297,7 @@
                             debug: {{ $character->debug ? 'true' : 'false' }},
                             rating: @js($character->rating ?? 'unknown')
                         })"
-                        class="break-inside-avoid block group relative rounded-[1.5rem] overflow-hidden border border-white/5 bg-slate-950 aspect-square shadow-lg hover:shadow-[0_0_25px_rgba(34,211,238,0.2)] hover:border-cyan-500/40 transform hover:-translate-y-1 transition-all duration-300 outline-none"
+                        class="break-inside-avoid group relative rounded-[1.5rem] overflow-hidden border border-white/5 bg-slate-950 aspect-square shadow-lg hover:shadow-[0_0_25px_rgba(34,211,238,0.2)] hover:border-cyan-500/40 transform hover:-translate-y-1 transition-all duration-300 outline-none"
                         title="{{ $character->name }}"
                         aria-label="{{ $character->name }}"
                         itemscope
@@ -333,11 +331,12 @@
                             @endif
                         </div>
 
-                        <div class="absolute top-3 left-3 flex flex-col gap-2 z-30 pointer-events-none">
+                        <div class="absolute top-3 left-3 flex flex-col gap-2 z-30">
                             <button
                                 type="button"
                                 @click.prevent.stop="toggleDebug"
-                                class="pointer-events-auto w-10 h-10 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none"
+                                :disabled="isBusy || isDeleting"
+                                class="w-10 h-10 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 :class="debug
                                     ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
                                     : 'bg-slate-900/60 text-slate-400 border-white/10 hover:border-cyan-500/40 hover:text-cyan-400 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]'"
@@ -352,7 +351,7 @@
                             <a
                                 href="{{ route('characters.merge.form', ['id' => $character->id]) }}"
                                 @click.stop
-                                class="pointer-events-auto w-10 h-10 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-violet-500/20 text-violet-400 border-violet-500/40 shadow-[0_0_15px_rgba(139,92,246,0.2)] hover:bg-violet-500/30 hover:border-violet-400/60 hover:scale-105"
+                                class="w-10 h-10 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-violet-500/20 text-violet-400 border-violet-500/40 shadow-[0_0_15px_rgba(139,92,246,0.2)] hover:bg-violet-500/30 hover:border-violet-400/60 hover:scale-105"
                                 title="Merge Character"
                                 aria-label="Merge {{ $character->name }}"
                             >
@@ -364,7 +363,8 @@
                             <button
                                 type="button"
                                 @click.prevent.stop="destroy"
-                                class="relative z-30 pointer-events-auto w-10 h-10 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)] hover:bg-rose-500/30 hover:border-rose-400/60 hover:scale-105"
+                                :disabled="isDeleting"
+                                class="w-10 h-10 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)] hover:bg-rose-500/30 hover:border-rose-400/60 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 title="Delete Character"
                                 aria-label="Delete {{ $character->name }}"
                             >
@@ -374,17 +374,18 @@
                             </button>
                         </div>
 
-                        <div class="absolute top-3 right-3 z-30 pointer-events-auto">
+                        <div class="absolute top-3 right-3 z-30">
                             <button
                                 type="button"
                                 @click.prevent.stop="openRatingPicker"
-                                class="h-10 px-3 rounded-xl border backdrop-blur-md transition-all duration-300 flex items-center justify-center font-black text-[10px] uppercase tracking-widest outline-none group/rating hover:scale-105"
+                                :disabled="isBusy || isDeleting"
+                                class="h-10 px-3 rounded-xl border backdrop-blur-md transition-all duration-300 flex items-center justify-center font-black text-[10px] uppercase tracking-widest outline-none hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 :class="ratingBadgeClass"
                                 :data-rating="rating"
                                 :aria-label="'Change rating for ' + name"
                                 title="Change Rating"
                             >
-                                <span class="rating-text drop-shadow-md" x-text="ratingLabel"></span>
+                                <span class="drop-shadow-md" x-text="ratingLabel"></span>
                             </button>
                         </div>
 
@@ -434,6 +435,8 @@
                 name,
                 debug,
                 rating,
+                isDeleting: false,
+                isBusy: false,
 
                 get ratingMap() {
                     return {
@@ -498,6 +501,9 @@
                 },
 
                 async toggleDebug() {
+                    if (this.isBusy || this.isDeleting) return;
+
+                    this.isBusy = true;
                     const previous = this.debug;
                     const nextValue = !this.debug;
                     this.debug = nextValue;
@@ -508,7 +514,7 @@
                         });
                     } catch (error) {
                         this.debug = previous;
-                        Swal.fire({
+                        await Swal.fire({
                             icon: 'error',
                             title: 'Failed',
                             text: error.message || 'Failed to update debug status.',
@@ -516,10 +522,14 @@
                             color: '#e2e8f0',
                             confirmButtonColor: '#06b6d4',
                         });
+                    } finally {
+                        this.isBusy = false;
                     }
                 },
 
                 async openRatingPicker() {
+                    if (this.isBusy || this.isDeleting) return;
+
                     const { value: selected } = await Swal.fire({
                         title: 'Update rating',
                         input: 'select',
@@ -547,6 +557,7 @@
 
                     if (!selected || selected === this.rating) return;
 
+                    this.isBusy = true;
                     const previous = this.rating;
                     this.rating = selected;
 
@@ -556,7 +567,7 @@
                         });
                     } catch (error) {
                         this.rating = previous;
-                        Swal.fire({
+                        await Swal.fire({
                             icon: 'error',
                             title: 'Failed',
                             text: error.message || 'Failed to update rating.',
@@ -564,50 +575,57 @@
                             color: '#e2e8f0',
                             confirmButtonColor: '#06b6d4',
                         });
+                    } finally {
+                        this.isBusy = false;
                     }
                 },
 
                 async destroy() {
-                    const result = await Swal.fire({
-                        title: 'Delete character?',
-                        text: `Character "${this.name}" and its relationships will be permanently deleted.`,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'Yes, delete',
-                        cancelButtonText: 'Cancel',
-                        confirmButtonColor: '#e11d48',
-                        background: '#020617',
-                        color: '#e2e8f0',
-                    });
-
-                    if (!result.isConfirmed) return;
+                    if (this.isDeleting) return;
+                    this.isDeleting = true;
 
                     try {
-                        const data = await this.request(`{{ url('characters') }}/${this.id}`, 'DELETE');
+                        const result = await Swal.fire({
+                            title: 'Delete character?',
+                            text: `Character "${this.name}" and its relationships will be permanently deleted.`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, delete',
+                            cancelButtonText: 'Cancel',
+                            confirmButtonColor: '#e11d48',
+                            background: '#020617',
+                            color: '#e2e8f0',
+                            showLoaderOnConfirm: true,
+                            allowOutsideClick: () => !Swal.isLoading(),
+                            allowEscapeKey: () => !Swal.isLoading(),
+                            preConfirm: async () => {
+                                try {
+                                    return await this.request(`{{ url('characters') }}/${this.id}`, 'DELETE');
+                                } catch (error) {
+                                    Swal.showValidationMessage(error.message || 'Failed to delete character.');
+                                    throw error;
+                                }
+                            }
+                        });
 
-                        const card = document.getElementById(`character-card-${this.id}`);
-                        if (card) {
-                            card.remove();
+                        if (!result.isConfirmed) {
+                            return;
                         }
 
-                        Swal.fire({
+                        const card = document.getElementById(`character-card-${this.id}`);
+                        card?.remove();
+
+                        await Swal.fire({
                             icon: 'success',
                             title: 'Deleted',
-                            text: data.message || `"${this.name}" has been deleted.`,
-                            timer: 1600,
+                            text: result.value?.message || `"${this.name}" has been deleted.`,
+                            timer: 1400,
                             showConfirmButton: false,
                             background: '#020617',
                             color: '#e2e8f0',
                         });
-                    } catch (error) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Failed',
-                            text: error.message || 'Failed to delete character.',
-                            background: '#020617',
-                            color: '#e2e8f0',
-                            confirmButtonColor: '#06b6d4',
-                        });
+                    } finally {
+                        this.isDeleting = false;
                     }
                 },
             };
