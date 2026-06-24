@@ -17,10 +17,20 @@
    aria-label="{{ $wallpaper->seo_title }}" 
    itemscope itemtype="https://schema.org/ImageObject">
     
-    <div class="relative z-10 overflow-hidden bg-slate-900/50">
-        <picture class="w-full h-auto block group-hover:scale-110 transition-transform duration-700 ease-out transform-gpu">
+    {{-- Container gambar dengan aspect-ratio untuk memesan ruang (Mencegah CLS/Lompatan Layout) --}}
+    <div class="relative z-10 overflow-hidden bg-slate-900/50 w-full" 
+         style="aspect-ratio: {{ $wallpaper->width > 0 ? $wallpaper->width . ' / ' . $wallpaper->height : '1 / 1' }};">
+         
+        <picture class="w-full h-full block group-hover:scale-110 transition-transform duration-700 ease-out transform-gpu">
             <source srcset="{{ $wallpaper->thumbnail['webp'] }}" type="image/webp">
-            <img itemprop="thumbnailUrl" src="{{ $wallpaper->thumbnail['jpg'] }}" alt="{{ $wallpaper->seo_title }}" width="300" height="{{ $wallpaper->width > 0 ? round(($wallpaper->height / $wallpaper->width) * 300) : 300 }}" class="w-full h-auto object-cover" >
+            <img itemprop="thumbnailUrl" 
+                 src="{{ $wallpaper->thumbnail['jpg'] }}" 
+                 alt="{{ $wallpaper->seo_title }}" 
+                 width="300" 
+                 height="{{ $wallpaper->width > 0 ? round(($wallpaper->height / $wallpaper->width) * 300) : 300 }}" 
+                 class="w-full h-full object-cover"
+                 loading="eager"
+                 decoding="sync">
         </picture>
     </div>
 
