@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Jobs\FetchWallpapersJob;
-use App\Models\App\FetchTask;
+use App\Models\FetchTask;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
