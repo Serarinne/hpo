@@ -21,6 +21,31 @@
             display: none;
         }
     </style>
+    <style>
+    .swal2-popup {
+        border-radius: 1.5rem !important;
+    }
+
+    .swal2-select {
+        background: #020617 !important;
+        color: #e2e8f0 !important;
+        border: 1px solid #1e293b !important;
+        border-radius: 0.75rem !important;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,.25) !important;
+    }
+
+    .swal2-select:focus {
+        outline: none !important;
+        border-color: rgb(6 182 212 / 0.6) !important;
+        box-shadow: 0 0 0 3px rgba(6,182,212,.18) !important;
+    }
+
+    .swal2-validation-message {
+        background: rgba(127, 29, 29, 0.25) !important;
+        color: #fecaca !important;
+        border-radius: 0.75rem !important;
+    }
+</style>
 </head>
 <body class="bg-slate-950 text-slate-200 font-sans min-h-screen flex flex-col selection:bg-cyan-500 selection:text-white">
     <x-navbar />
@@ -174,7 +199,105 @@
 
             <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-5 mb-12 relative z-10">
                 @forelse($characters as $character)
-                    <x-character-card :character="$character" />
+                    @php
+    $firstSeries = $character->series->first();
+    $seriesSlug = $firstSeries?->slug ?? 'unknown';
+    $seriesName = $firstSeries?->name ?? '';
+    
+    $firstLetter = Str::upper(Str::substr($character->name, 0, 1));
+    $hasImage = !empty($character->image);
+
+    $ratingStyles = [
+        'general'      => ['text' => 'GEN', 'class' => 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]'],
+        'sensitive'    => ['text' => 'SEN', 'class' => 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]'],
+        'questionable' => ['text' => 'QST', 'class' => 'bg-orange-500/20 text-orange-400 border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.2)]'],
+        'explicit'     => ['text' => 'EXP', 'class' => 'bg-rose-500/20 text-rose-400 border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.2)]'],
+        'unknown'      => ['text' => 'UNK', 'class' => 'bg-slate-500/20 text-slate-300 border-slate-500/30 shadow-[0_0_15px_rgba(100,116,139,0.2)]'],
+    ];
+
+    $currentRating = $ratingStyles[$character->rating] ?? $ratingStyles['unknown'];
+@endphp
+
+<article
+    id="character-card-{{ $character->id }}"
+    x-data="{ isDebug: {{ $character->debug ? 'true' : 'false' }} }"
+    class="break-inside-avoid block group relative rounded-[1.5rem] overflow-hidden border border-white/5 bg-slate-950 aspect-square shadow-lg hover:shadow-[0_0_25px_rgba(34,211,238,0.2)] hover:border-cyan-500/40 transform hover:-translate-y-1 transition-all duration-300 outline-none"
+    title="{{ $character->name }}"
+    aria-label="{{ $character->name }}"
+    itemscope
+    itemtype="https://schema.org/Person"
+>
+    <a href="{{ route('characters.edit', ['id' => $character->id]) }}" class="absolute inset-0 z-10 outline-none"></a>
+
+    <div class="absolute inset-0 z-0 {{ !$hasImage ? 'flex justify-center items-center p-6 bg-slate-900/50 backdrop-blur-sm' : 'bg-slate-950' }}">
+        @if($hasImage)
+            <picture class="w-full h-full block group-hover:scale-110 transition-transform duration-700 ease-out transform-gpu">
+                <source srcset="{{ $character->image['webp'] }}" type="image/webp">
+                <img itemprop="image" src="{{ $character->image['jpg'] }}" alt="{{ $character->name }}" loading="lazy" decoding="async" width="400" height="400" class="w-full h-full object-cover" />
+            </picture>
+        @else
+            <div class="w-20 h-20 bg-cyan-500/10 border border-cyan-500/30 rounded-[1.25rem] flex items-center justify-center text-cyan-400 font-black text-4xl uppercase shadow-[inset_0_0_20px_rgba(34,211,238,0.1)] group-hover:shadow-[inset_0_0_30px_rgba(34,211,238,0.3)] group-hover:bg-cyan-500/20 transition-all duration-500" aria-hidden="true">
+                {{ $firstLetter }}
+            </div>
+        @endif
+    </div>
+
+    <div class="absolute top-3 left-3 flex flex-col gap-2 z-30 pointer-events-none">
+        <button type="button" 
+            @click.prevent.stop="isDebug = !isDebug; window.toggleDebug({{ $character->id }}, isDebug)" 
+            class="pointer-events-auto w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none" 
+            :class="isDebug ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-slate-900/60 text-slate-400 border-white/10 hover:border-cyan-500/40 hover:text-cyan-400 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]'" 
+            title="Toggle Debug Mode">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+            </svg> 
+        </button>
+
+        <a href="{{ route('characters.merge.form', ['id' => $character->id]) }}"
+           @click.stop
+           class="pointer-events-auto w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-violet-500/20 text-violet-400 border-violet-500/40 shadow-[0_0_15px_rgba(139,92,246,0.2)] hover:bg-violet-500/30 hover:border-violet-400/60 hover:scale-105"
+           title="Merge Character"
+           aria-label="Merge {{ $character->name }}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h3m5 0h-3M12 7v10m-4-4 4 4 4-4"></path>
+            </svg>
+        </a>
+
+        <button type="button"
+            data-name="{{ $character->name }}"
+            @click.prevent.stop="window.deleteCharacterCard({{ $character->id }}, $el.dataset.name)"
+            class="pointer-events-auto w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)] hover:bg-rose-500/30 hover:border-rose-400/60 hover:scale-105"
+            title="Delete Character"
+            aria-label="Delete {{ $character->name }}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0l1 12a1 1 0 001 1h6a1 1 0 001-1l1-12"></path>
+            </svg>
+        </button>
+    </div>
+
+    <div class="absolute top-3 right-3 z-30 pointer-events-auto">
+        <button type="button" 
+            @click.prevent.stop="window.toggleRatingDropdown({{ $character->id }}, $event)" 
+            class="h-8 px-3 rounded-xl border backdrop-blur-md transition-all duration-300 flex items-center justify-center font-black text-[10px] uppercase tracking-widest outline-none group/rating hover:scale-105 {{ $currentRating['class'] }}" 
+            data-rating="{{ $character->rating }}">
+            <span class="rating-text drop-shadow-md">{{ $currentRating['text'] }}</span>
+        </button>
+    </div>
+
+    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent pointer-events-none z-10 opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+    <div class="absolute inset-x-0 bottom-0 p-5 pointer-events-none z-20 flex flex-col justify-end">
+        <h3 class="text-white font-black text-base sm:text-lg leading-tight line-clamp-1 group-hover:text-cyan-400 transition-colors duration-300 drop-shadow-md" itemprop="name">
+            {{ $character->name }}
+        </h3>
+        
+        @if($seriesName)
+            <p class="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-1.5 line-clamp-1 group-hover:text-cyan-300 transition-colors duration-300" itemprop="memberOf">
+                {{ $seriesName }}
+            </p>
+        @endif
+    </div>
+</article>
                 @empty
                     <div class="col-span-full w-full flex flex-col items-center justify-center py-20 px-4 text-center bg-slate-900/40 border border-dashed border-slate-700 rounded-[2rem] backdrop-blur-md shadow-inner">
                         <div class="w-20 h-20 mb-5 rounded-full bg-slate-800 flex items-center justify-center">
@@ -195,226 +318,230 @@
     <x-footer />
 
     <script>
-        var metaTag = document.querySelector('meta[name="csrf-token"]');
-        var csrfToken = metaTag ? metaTag.getAttribute('content') : '';
+    var metaTag = document.querySelector('meta[name="csrf-token"]');
+    var csrfToken = metaTag ? metaTag.getAttribute('content') : '';
 
-        function ensureSwal() {
-            if (typeof Swal === 'undefined') {
-                console.error('SweetAlert2 is not loaded.');
-                alert('SweetAlert2 is not loaded. Check <x-assets />.');
-                return false;
-            }
-            return true;
+    function ensureSwal() {
+        if (typeof Swal === 'undefined') {
+            console.error('SweetAlert2 is not loaded.');
+            alert('SweetAlert2 is not loaded. Check <x-assets />.');
+            return false;
         }
+        return true;
+    }
 
-        function showToast(icon, title, background, color) {
-            var bg = background || '#0f172a';
-            var col = color || '#e2e8f0';
-            
-            if (!ensureSwal()) return;
+    function adminModal(options) {
+        return Swal.fire({
+            theme: 'dark',
+            background: '#020617',
+            color: '#e2e8f0',
+            reverseButtons: true,
+            buttonsStyling: false,
+            customClass: {
+                popup: 'rounded-[1.5rem] border border-white/10 shadow-2xl',
+                title: 'text-white text-xl font-black',
+                htmlContainer: 'text-slate-300 text-sm',
+                actions: 'gap-3',
+                confirmButton: 'px-5 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white font-bold transition-all',
+                cancelButton: 'px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold transition-all'
+            },
+            ...options
+        });
+    }
 
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: icon,
-                title: title,
-                showConfirmButton: false,
-                timer: 2200,
-                timerProgressBar: true,
-                background: bg,
-                color: col
-            });
+    function showToast(icon, title, background, color) {
+        if (!ensureSwal()) return;
+
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: icon,
+            title: title,
+            showConfirmButton: false,
+            timer: 2200,
+            timerProgressBar: true,
+            background: background || '#0f172a',
+            color: color || '#e2e8f0',
+            theme: 'dark'
+        });
+    }
+
+    async function parseJsonSafe(response) {
+        const text = await response.text();
+        try {
+            return text ? JSON.parse(text) : {};
+        } catch (e) {
+            console.error('Invalid JSON response:', text);
+            throw new Error('Server did not return valid JSON.');
         }
+    }
 
-        async function parseJsonSafe(response) {
-            const text = await response.text();
-            try {
-                return text ? JSON.parse(text) : {};
-            } catch (e) {
-                console.error('Invalid JSON response:', text);
-                throw new Error('Server did not return valid JSON.');
-            }
-        }
+    window.deleteCharacterCard = async function(characterId, characterName) {
+        if (!ensureSwal()) return;
 
-        window.deleteCharacterCard = async function(characterId, characterName) {
-            if (!ensureSwal()) return;
+        const urlTemplate = "{{ route('characters.delete', ['id' => '__ID__']) }}";
+        const url = urlTemplate.replace('__ID__', characterId);
 
-            const result = await Swal.fire({
-                title: 'Delete Character?',
-                text: 'Character "' + characterName + '" and its relationships will be permanently deleted.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#f43f5e',
-                cancelButtonColor: '#64748b',
-                confirmButtonText: 'Yes, delete it',
-                cancelButtonText: 'Cancel',
-                reverseButtons: true,
-                background: '#020617',
-                color: '#e2e8f0'
-            });
+        const result = await adminModal({
+            title: 'Delete Character?',
+            html: `
+                <div class="text-left">
+                    <p class="text-slate-300">
+                        Character <span class="font-bold text-rose-400">"${characterName}"</span>
+                        dan seluruh relasinya akan dihapus permanen.
+                    </p>
+                </div>
+            `,
+            icon: 'warning',
+            iconColor: '#f43f5e',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#f43f5e',
+            showLoaderOnConfirm: true,
+            allowOutsideClick: () => !Swal.isLoading(),
+            preConfirm: async () => {
+                try {
+                    const response = await fetch(url, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
 
-            if (!result.isConfirmed) return;
+                    const data = await parseJsonSafe(response);
 
-            try {
-                const urlTemplate = "{{ route('characters.delete', ['id' => '__ID__']) }}";
-                const url = urlTemplate.replace('__ID__', characterId);
-
-                const response = await fetch(url, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
+                    if (!response.ok || !data.success) {
+                        Swal.showValidationMessage(data.message || 'Failed to delete character.');
+                        return false;
                     }
-                });
 
-                const data = await parseJsonSafe(response);
-
-                if (!response.ok || !data.success) {
-                    throw new Error(data.message || 'Failed to delete character.');
+                    return data;
+                } catch (error) {
+                    Swal.showValidationMessage(error.message || 'Network error while deleting character.');
+                    return false;
                 }
-
-                const element = document.getElementById('character-card-' + characterId);
-                if (element) {
-                    element.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
-                    element.style.opacity = '0';
-                    element.style.transform = 'scale(0.96)';
-                    setTimeout(function() { element.remove(); }, 260);
-                }
-
-                showToast('success', data.message, '#052e16', '#d1fae5');
-            } catch (error) {
-                console.error('Delete error:', error);
-                showToast('error', error.message || 'Failed to delete character.', '#450a0a', '#fee2e2');
             }
-        };
+        });
 
-        window.toggleDebug = async function(characterId, isDebug) {
-            try {
-                const urlTemplate = "{{ route('characters.toggle-debug', ['id' => '__ID__']) }}";
-                const url = urlTemplate.replace('__ID__', characterId);
+        if (!result.isConfirmed || !result.value) return;
 
-                const response = await fetch(url, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({ debug: isDebug })
-                });
-
-                const data = await parseJsonSafe(response);
-
-                if (!response.ok || !data.success) {
-                    showToast('error', data.message || 'Failed to update debug.', '#450a0a', '#fee2e2');
-                }
-            } catch (error) {
-                console.error('Network error occurred:', error);
-                showToast('error', 'Network error occurred while updating debug.', '#450a0a', '#fee2e2');
-            }
-        };
-
-        window.toggleRatingDropdown = async function(characterId, event) {
-            if (!ensureSwal()) return;
-
-            const button = event.currentTarget;
-            const currentRating = button.getAttribute('data-rating');
-            const ratingOptions = {
-                general: 'General (GEN)',
-                sensitive: 'Sensitive (SEN)',
-                questionable: 'Questionable (QST)',
-                explicit: 'Explicit (EXP)',
-                unknown: 'Unknown (UNK)'
-            };
-
-            const result = await Swal.fire({
-                title: 'Change Character Rating',
-                input: 'select',
-                inputOptions: ratingOptions,
-                inputValue: currentRating,
-                showCancelButton: true,
-                confirmButtonColor: '#0ea5e9',
-                cancelButtonColor: '#64748b',
-                confirmButtonText: 'Save',
-                cancelButtonText: 'Cancel',
-                background: '#020617',
-                color: '#e2e8f0'
-            });
-
-            const selectedRating = result.value;
-
-            if (!selectedRating || selectedRating === currentRating) return;
-
-            try {
-                button.style.opacity = '0.5';
-                button.style.pointerEvents = 'none';
-
-                const urlTemplate = "{{ route('characters.update-rating', ['id' => '__ID__']) }}";
-                const url = urlTemplate.replace('__ID__', characterId);
-
-                const response = await fetch(url, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({ rating: selectedRating })
-                });
-
-                const data = await parseJsonSafe(response);
-
-                if (!response.ok || !data.success) {
-                    throw new Error(data.message || 'Failed to update rating.');
-                }
-
-                updateRatingButtonUI(button, selectedRating);
-                showToast('success', 'Rating updated!', '#082f49', '#e0f2fe');
-            } catch (error) {
-                console.error('Rating update error:', error);
-                showToast('error', error.message || 'Failed to change rating.', '#450a0a', '#fee2e2');
-            } finally {
-                button.style.opacity = '1';
-                button.style.pointerEvents = 'auto';
-            }
-        };
-
-        function updateRatingButtonUI(buttonElement, newRating) {
-            const textSpan = buttonElement.querySelector('.rating-text');
-            const baseClasses = "h-8 px-3 rounded-xl border backdrop-blur-md transition-all duration-300 flex items-center justify-center font-black text-[10px] uppercase tracking-widest outline-none group/rating hover:scale-105";
-
-            const map = {
-                general: {
-                    text: 'GEN',
-                    classes: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
-                },
-                sensitive: {
-                    text: 'SEN',
-                    classes: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]'
-                },
-                questionable: {
-                    text: 'QST',
-                    classes: 'bg-orange-500/20 text-orange-400 border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.2)]'
-                },
-                explicit: {
-                    text: 'EXP',
-                    classes: 'bg-rose-500/20 text-rose-400 border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.2)]'
-                },
-                unknown: {
-                    text: 'UNK',
-                    classes: 'bg-slate-500/20 text-slate-300 border-slate-500/30 shadow-[0_0_15px_rgba(100,116,139,0.2)]'
-                }
-            };
-
-            const config = map[newRating] || map.unknown;
-            buttonElement.className = baseClasses + ' ' + config.classes;
-            textSpan.textContent = config.text;
-            buttonElement.setAttribute('data-rating', newRating);
+        const element = document.getElementById('character-card-' + characterId);
+        if (element) {
+            element.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+            element.style.opacity = '0';
+            element.style.transform = 'scale(0.96)';
+            setTimeout(function() { element.remove(); }, 260);
         }
-    </script>
+
+        showToast('success', result.value.message || 'Character deleted.', '#052e16', '#d1fae5');
+    };
+
+    window.toggleRatingDropdown = async function(characterId, event) {
+        if (!ensureSwal()) return;
+
+        const button = event.currentTarget;
+        const currentRating = button.getAttribute('data-rating');
+
+        const ratingOptions = {
+            general: 'General (GEN)',
+            sensitive: 'Sensitive (SEN)',
+            questionable: 'Questionable (QST)',
+            explicit: 'Explicit (EXP)',
+            unknown: 'Unknown (UNK)'
+        };
+
+        const urlTemplate = "{{ route('characters.update-rating', ['id' => '__ID__']) }}";
+        const url = urlTemplate.replace('__ID__', characterId);
+
+        const result = await adminModal({
+            title: 'Change Character Rating',
+            input: 'select',
+            inputOptions: ratingOptions,
+            inputValue: currentRating,
+            inputPlaceholder: 'Select rating',
+            showCancelButton: true,
+            confirmButtonText: 'Save Rating',
+            cancelButtonText: 'Cancel',
+            showLoaderOnConfirm: true,
+            allowOutsideClick: () => !Swal.isLoading(),
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Please select a rating.';
+                }
+            },
+            preConfirm: async (selectedRating) => {
+                try {
+                    const response = await fetch(url, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ rating: selectedRating })
+                    });
+
+                    const data = await parseJsonSafe(response);
+
+                    if (!response.ok || !data.success) {
+                        Swal.showValidationMessage(data.message || 'Failed to update rating.');
+                        return false;
+                    }
+
+                    return {
+                        rating: selectedRating,
+                        message: data.message || 'Rating updated.'
+                    };
+                } catch (error) {
+                    Swal.showValidationMessage(error.message || 'Network error while updating rating.');
+                    return false;
+                }
+            }
+        });
+
+        if (!result.isConfirmed || !result.value) return;
+
+        updateRatingButtonUI(button, result.value.rating);
+        showToast('success', result.value.message, '#082f49', '#e0f2fe');
+    };
+
+    function updateRatingButtonUI(buttonElement, newRating) {
+        const textSpan = buttonElement.querySelector('.rating-text');
+        const baseClasses = "h-8 px-3 rounded-xl border backdrop-blur-md transition-all duration-300 flex items-center justify-center font-black text-[10px] uppercase tracking-widest outline-none group/rating hover:scale-105";
+
+        const map = {
+            general: {
+                text: 'GEN',
+                classes: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
+            },
+            sensitive: {
+                text: 'SEN',
+                classes: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]'
+            },
+            questionable: {
+                text: 'QST',
+                classes: 'bg-orange-500/20 text-orange-400 border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.2)]'
+            },
+            explicit: {
+                text: 'EXP',
+                classes: 'bg-rose-500/20 text-rose-400 border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.2)]'
+            },
+            unknown: {
+                text: 'UNK',
+                classes: 'bg-slate-500/20 text-slate-300 border-slate-500/30 shadow-[0_0_15px_rgba(100,116,139,0.2)]'
+            }
+        };
+
+        const config = map[newRating] || map.unknown;
+        buttonElement.className = baseClasses + ' ' + config.classes;
+        textSpan.textContent = config.text;
+        buttonElement.setAttribute('data-rating', newRating);
+    }
+</script>
 
     <script>
         document.addEventListener('click', function(event) {
