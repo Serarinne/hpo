@@ -17,7 +17,6 @@
     $currentRating = $ratingStyles[$character->rating] ?? $ratingStyles['unknown'];
 @endphp
 
-<!-- x-data ditambahkan di tag article agar seluruh isi card terdeteksi oleh Alpine.js -->
 <article
     id="character-card-{{ $character->id }}"
     x-data="{ isDebug: {{ $character->debug ? 'true' : 'false' }} }"
@@ -64,7 +63,7 @@
         </a>
 
         <button type="button"
-            @click.prevent.stop='deleteCharacterCard({{ $character->id }}, @js($character->name))'
+            @click.prevent.stop="deleteCharacterCard({{ $character->id }}, '{{ addslashes($character->name) }}')"
             class="pointer-events-auto w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)] hover:bg-rose-500/30 hover:border-rose-400/60 hover:scale-105"
             title="Delete Character"
             aria-label="Delete {{ $character->name }}">
