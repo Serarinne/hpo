@@ -6,7 +6,6 @@ use App\Jobs\FetchWallpapersJob;
 use App\Models\FetchTask;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -392,27 +391,14 @@ class FetchManagerCommand extends Command
 
     private function smartAutoPopulateOnlyWhenQueueEmpty(string $sourceApi, bool $forcePopulate = false): int
     {
-        if (!$forcePopulate) {
-            $cacheKey = "last_populate_nte_{$sourceApi}";
-            $lastPopulate = Cache::get($cacheKey);
-
-            if ($lastPopulate && now()->diffInMinutes($lastPopulate) < 60) {
-                return 0;
-            }
-        }
-
         $coreCount = $this->getCoreTotalCount($sourceApi);
         $appCount = FetchTask::where('source_api', $sourceApi)->count();
 
         if (!$forcePopulate && $coreCount <= $appCount) {
-            Cache::put("last_populate_nte_{$sourceApi}", now(), 3600);
             return 0;
         }
 
-        $inserted = $this->populateFromCore($sourceApi);
-        Cache::put("last_populate_nte_{$sourceApi}", now(), 3600);
-
-        return $inserted;
+        return $this->populateFromCore($sourceApi);
     }
 
     private function getCoreTotalCount(string $sourceApi): int
