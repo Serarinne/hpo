@@ -43,7 +43,7 @@
 
     <div class="absolute top-3 left-3 flex flex-col gap-2 z-30 pointer-events-none">
         <button type="button" 
-            @click.prevent.stop="isDebug = !isDebug; toggleDebug({{ $character->id }}, isDebug)" 
+            @click.prevent.stop="isDebug = !isDebug; window.toggleDebug({{ $character->id }}, isDebug)" 
             class="pointer-events-auto w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none" 
             :class="isDebug ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-slate-900/60 text-slate-400 border-white/10 hover:border-cyan-500/40 hover:text-cyan-400 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]'" 
             title="Toggle Debug Mode">
@@ -63,7 +63,7 @@
         </a>
 
         <button type="button"
-            @click.prevent.stop="deleteCharacterCard({{ $character->id }}, '{{ addslashes($character->name) }}')"
+            @click.prevent.stop='window.deleteCharacterCard({{ $character->id }}, @js($character->name))'
             class="pointer-events-auto w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)] hover:bg-rose-500/30 hover:border-rose-400/60 hover:scale-105"
             title="Delete Character"
             aria-label="Delete {{ $character->name }}">
@@ -75,7 +75,7 @@
 
     <div class="absolute top-3 right-3 z-30 pointer-events-auto">
         <button type="button" 
-            @click.prevent.stop="toggleRatingDropdown({{ $character->id }}, $event)" 
+            @click.prevent.stop="window.toggleRatingDropdown({{ $character->id }}, $event)" 
             class="h-8 px-3 rounded-xl border backdrop-blur-md transition-all duration-300 flex items-center justify-center font-black text-[10px] uppercase tracking-widest outline-none group/rating hover:scale-105 {{ $currentRating['class'] }}" 
             data-rating="{{ $character->rating }}">
             <span class="rating-text drop-shadow-md">{{ $currentRating['text'] }}</span>
