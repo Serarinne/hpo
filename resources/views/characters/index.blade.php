@@ -44,7 +44,6 @@
         }
     </style>
 </head>
-
 <body class="bg-slate-950 text-slate-200 font-sans min-h-screen flex flex-col selection:bg-cyan-500 selection:text-white">
     <x-navbar />
 
@@ -66,7 +65,9 @@
                         Character <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 drop-shadow-sm">Management</span>
                     </h1>
 
-                    <p class="text-sm text-slate-400 font-medium pt-1">Browse, filter, and manage all your character entities.</p>
+                    <p class="text-sm text-slate-400 font-medium pt-1">
+                        Browse, filter, and manage all your character entities.
+                    </p>
                 </div>
             </div>
 
@@ -84,7 +85,6 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                 </svg>
                             </div>
-
                             <input
                                 type="text"
                                 name="search"
@@ -100,7 +100,7 @@
                         <div class="w-full md:w-36 relative">
                             <label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Rating</label>
                             <details class="group custom-dropdown relative">
-                                <summary class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all shadow-inner cursor-pointer list-none flex justify-between items-center select-none">
+                                <summary class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white transition-all shadow-inner cursor-pointer list-none flex justify-between items-center select-none">
                                     @php $ratingCount = count(request('rating', [])); @endphp
                                     <span class="text-sm truncate mr-2 {{ $ratingCount > 0 ? 'text-cyan-400 font-bold' : 'text-slate-400 font-medium' }}">
                                         {{ $ratingCount > 0 ? $ratingCount . ' Selected' : 'All Ratings' }}
@@ -130,7 +130,7 @@
                         <div class="w-full md:w-36 relative">
                             <label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">SEO Status</label>
                             <details class="group custom-dropdown relative">
-                                <summary class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all shadow-inner cursor-pointer list-none flex justify-between items-center select-none">
+                                <summary class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white transition-all shadow-inner cursor-pointer list-none flex justify-between items-center select-none">
                                     @php $seoCount = count(request('seo', [])); @endphp
                                     <span class="text-sm truncate mr-2 {{ $seoCount > 0 ? 'text-purple-400 font-bold' : 'text-slate-400 font-medium' }}">
                                         {{ $seoCount > 0 ? $seoCount . ' Selected' : 'All SEO' }}
@@ -160,7 +160,7 @@
                         <div class="w-full md:w-36 relative">
                             <label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Workflow</label>
                             <details class="group custom-dropdown relative">
-                                <summary class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all shadow-inner cursor-pointer list-none flex justify-between items-center select-none">
+                                <summary class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white transition-all shadow-inner cursor-pointer list-none flex justify-between items-center select-none">
                                     @php $workflowCount = count(request('workflow', [])); @endphp
                                     <span class="text-sm truncate mr-2 {{ $workflowCount > 0 ? 'text-emerald-400 font-bold' : 'text-slate-400 font-medium' }}">
                                         {{ $workflowCount > 0 ? $workflowCount . ' Selected' : 'All Flow' }}
@@ -190,7 +190,7 @@
                         <div class="w-full md:w-40 relative">
                             <label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Has Wallpaper</label>
                             <details class="group custom-dropdown relative">
-                                <summary class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all shadow-inner cursor-pointer list-none flex justify-between items-center select-none">
+                                <summary class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white transition-all shadow-inner cursor-pointer list-none flex justify-between items-center select-none">
                                     @php $wallpaperCount = count(request('has_wallpaper', [])); @endphp
                                     <span class="text-sm truncate mr-2 {{ $wallpaperCount > 0 ? 'text-pink-400 font-bold' : 'text-slate-400 font-medium' }}">
                                         {{ $wallpaperCount > 0 ? $wallpaperCount . ' Selected' : 'Any' }}
@@ -220,7 +220,7 @@
                         <div class="w-full md:w-36 relative">
                             <label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Has Series</label>
                             <details class="group custom-dropdown relative">
-                                <summary class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all shadow-inner cursor-pointer list-none flex justify-between items-center select-none">
+                                <summary class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white transition-all shadow-inner cursor-pointer list-none flex justify-between items-center select-none">
                                     @php $seriesCount = count(request('has_series', [])); @endphp
                                     <span class="text-sm truncate mr-2 {{ $seriesCount > 0 ? 'text-orange-400 font-bold' : 'text-slate-400 font-medium' }}">
                                         {{ $seriesCount > 0 ? $seriesCount . ' Selected' : 'Any' }}
@@ -255,8 +255,15 @@
                                 Filter
                             </button>
 
-                            @if(request()->anyFilled(['search', 'rating', 'seo', 'workflow', 'has_wallpaper', 'has_series']))
-                                <a href="{{ url()->current() }}" class="flex-1 md:flex-none px-5 py-3 bg-slate-800 hover:bg-red-500/20 border border-transparent hover:border-red-500/30 text-slate-300 hover:text-red-400 font-bold rounded-xl transition-all text-center flex items-center justify-center outline-none">
+                            @if(
+                                request()->filled('search') ||
+                                request()->has('rating') ||
+                                request()->has('seo') ||
+                                request()->has('workflow') ||
+                                request()->has('has_wallpaper') ||
+                                request()->has('has_series')
+                            )
+                                <a href="{{ route('characters.index') }}" class="flex-1 md:flex-none px-5 py-3 bg-slate-800 hover:bg-red-500/20 border border-transparent hover:border-red-500/30 text-slate-300 hover:text-red-400 font-bold rounded-xl transition-all text-center flex items-center justify-center outline-none">
                                     Clear
                                 </a>
                             @endif
@@ -270,15 +277,15 @@
                     @php
                         $firstSeries = $character->series->first();
                         $seriesName = $firstSeries?->name ?? '';
-                        $firstLetter = Str::upper(Str::substr($character->name, 0, 1));
+                        $firstLetter = \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($character->name, 0, 1));
                         $hasImage = !empty($character->image);
 
                         $ratingStyles = [
-                            'general'      => ['text' => 'GEN', 'class' => 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'],
-                            'sensitive'    => ['text' => 'SEN', 'class' => 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'],
-                            'questionable' => ['text' => 'QST', 'class' => 'bg-orange-500/20 text-orange-400 border-orange-500/30'],
-                            'explicit'     => ['text' => 'EXP', 'class' => 'bg-rose-500/20 text-rose-400 border-rose-500/30'],
-                            'unknown'      => ['text' => 'UNK', 'class' => 'bg-slate-500/20 text-slate-300 border-slate-500/30'],
+                            'general'      => ['text' => 'GEN', 'class' => 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]'],
+                            'sensitive'    => ['text' => 'SEN', 'class' => 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]'],
+                            'questionable' => ['text' => 'QST', 'class' => 'bg-orange-500/20 text-orange-400 border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.2)]'],
+                            'explicit'     => ['text' => 'EXP', 'class' => 'bg-rose-500/20 text-rose-400 border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.2)]'],
+                            'unknown'      => ['text' => 'UNK', 'class' => 'bg-slate-500/20 text-slate-300 border-slate-500/30 shadow-[0_0_15px_rgba(100,116,139,0.2)]'],
                         ];
 
                         $currentRating = $ratingStyles[$character->rating] ?? $ratingStyles['unknown'];
@@ -298,13 +305,26 @@
                         itemscope
                         itemtype="https://schema.org/Person"
                     >
-                        <a href="{{ route('characters.edit', ['id' => $character->id]) }}" class="absolute inset-0 z-10 outline-none" aria-label="Edit {{ $character->name }}"></a>
+                        <a
+                            href="{{ route('characters.edit', ['id' => $character->id]) }}"
+                            class="absolute inset-0 z-10 outline-none"
+                            aria-label="Edit {{ $character->name }}"
+                        ></a>
 
                         <div class="absolute inset-0 z-0 {{ !$hasImage ? 'flex justify-center items-center p-6 bg-slate-900/50 backdrop-blur-sm' : 'bg-slate-950' }}">
                             @if($hasImage)
                                 <picture class="w-full h-full block group-hover:scale-110 transition-transform duration-700 ease-out transform-gpu">
                                     <source srcset="{{ $character->image['webp'] }}" type="image/webp">
-                                    <img itemprop="image" src="{{ $character->image['jpg'] }}" alt="{{ $character->name }}" loading="lazy" decoding="async" width="400" height="400" class="w-full h-full object-cover" />
+                                    <img
+                                        itemprop="image"
+                                        src="{{ $character->image['jpg'] }}"
+                                        alt="{{ $character->name }}"
+                                        loading="lazy"
+                                        decoding="async"
+                                        width="400"
+                                        height="400"
+                                        class="w-full h-full object-cover"
+                                    />
                                 </picture>
                             @else
                                 <div class="w-20 h-20 bg-cyan-500/10 border border-cyan-500/30 rounded-[1.25rem] flex items-center justify-center text-cyan-400 font-black text-4xl uppercase shadow-[inset_0_0_20px_rgba(34,211,238,0.1)] group-hover:shadow-[inset_0_0_30px_rgba(34,211,238,0.3)] group-hover:bg-cyan-500/20 transition-all duration-500" aria-hidden="true">
@@ -321,8 +341,8 @@
                                 :class="debug
                                     ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
                                     : 'bg-slate-900/60 text-slate-400 border-white/10 hover:border-cyan-500/40 hover:text-cyan-400 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]'"
-                                :aria-label="debug ? 'Disable debug for ' + name : 'Enable debug for ' + name"
-                                title="Toggle Debug Mode"
+                                :title="debug ? 'Set Ready' : 'Set Debug'"
+                                :aria-label="debug ? 'Set ready for ' + name : 'Set debug for ' + name"
                             >
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
@@ -358,8 +378,9 @@
                             <button
                                 type="button"
                                 @click.prevent.stop="openRatingPicker"
-                                class="h-10 px-3 rounded-xl border backdrop-blur-md transition-all duration-300 flex items-center justify-center font-black text-[10px] uppercase tracking-widest outline-none hover:scale-105 {{ $currentRating['class'] }}"
-                                data-rating="{{ $character->rating }}"
+                                class="h-10 px-3 rounded-xl border backdrop-blur-md transition-all duration-300 flex items-center justify-center font-black text-[10px] uppercase tracking-widest outline-none group/rating hover:scale-105"
+                                :class="ratingBadgeClass"
+                                :data-rating="rating"
                                 :aria-label="'Change rating for ' + name"
                                 title="Change Rating"
                             >
@@ -369,8 +390,8 @@
 
                         <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent pointer-events-none z-10 opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-                        <div class="absolute inset-x-0 bottom-0 p-4 sm:p-5 pointer-events-none z-20 flex flex-col justify-end">
-                            <h3 class="text-white font-black text-sm sm:text-base leading-tight line-clamp-1 group-hover:text-cyan-400 transition-colors duration-300 drop-shadow-md" itemprop="name">
+                        <div class="absolute inset-x-0 bottom-0 p-5 pointer-events-none z-20 flex flex-col justify-end">
+                            <h3 class="text-white font-black text-base sm:text-lg leading-tight line-clamp-1 group-hover:text-cyan-400 transition-colors duration-300 drop-shadow-md" itemprop="name">
                                 {{ $character->name }}
                             </h3>
 
@@ -414,66 +435,93 @@
                 debug,
                 rating,
 
-                get ratingLabel() {
-                    const map = {
-                        general: 'GEN',
-                        sensitive: 'SEN',
-                        questionable: 'QST',
-                        explicit: 'EXP',
-                        unknown: 'UNK',
+                get ratingMap() {
+                    return {
+                        general: {
+                            text: 'GEN',
+                            class: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]',
+                        },
+                        sensitive: {
+                            text: 'SEN',
+                            class: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]',
+                        },
+                        questionable: {
+                            text: 'QST',
+                            class: 'bg-orange-500/20 text-orange-400 border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.2)]',
+                        },
+                        explicit: {
+                            text: 'EXP',
+                            class: 'bg-rose-500/20 text-rose-400 border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.2)]',
+                        },
+                        unknown: {
+                            text: 'UNK',
+                            class: 'bg-slate-500/20 text-slate-300 border-slate-500/30 shadow-[0_0_15px_rgba(100,116,139,0.2)]',
+                        },
                     };
-                    return map[this.rating] ?? 'UNK';
                 },
 
-                async request(url, method = 'PATCH', body = {}) {
-                    const response = await fetch(url, {
+                get ratingLabel() {
+                    return this.ratingMap[this.rating]?.text ?? 'UNK';
+                },
+
+                get ratingBadgeClass() {
+                    return this.ratingMap[this.rating]?.class ?? this.ratingMap.unknown.class;
+                },
+
+                async request(url, method = 'PATCH', body = null) {
+                    const options = {
                         method,
                         headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken,
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest',
-                        },
-                        body: method === 'DELETE' ? null : JSON.stringify(body),
-                    });
+                            'X-CSRF-TOKEN': csrfToken,
+                        }
+                    };
 
-                    if (!response.ok) {
-                        let message = 'Request failed';
-                        try {
-                            const data = await response.json();
-                            message = data.message ?? message;
-                        } catch (_) {}
-                        throw new Error(message);
+                    if (body !== null) {
+                        options.headers['Content-Type'] = 'application/json';
+                        options.body = JSON.stringify(body);
                     }
 
+                    const response = await fetch(url, options);
+
+                    let data = {};
                     try {
-                        return await response.json();
-                    } catch (_) {
-                        return {};
+                        data = await response.json();
+                    } catch (_) {}
+
+                    if (!response.ok || data.success === false) {
+                        throw new Error(data.message || 'Request failed.');
                     }
+
+                    return data;
                 },
 
                 async toggleDebug() {
                     const previous = this.debug;
-                    this.debug = !this.debug;
+                    const nextValue = !this.debug;
+                    this.debug = nextValue;
 
                     try {
-                        await this.request(`{{ url('characters') }}/${this.id}/toggle-debug`, 'PATCH');
+                        await this.request(`{{ url('characters') }}/${this.id}/toggle-debug`, 'PATCH', {
+                            debug: nextValue
+                        });
                     } catch (error) {
                         this.debug = previous;
                         Swal.fire({
                             icon: 'error',
                             title: 'Failed',
                             text: error.message || 'Failed to update debug status.',
-                            background: '#0f172a',
+                            background: '#020617',
                             color: '#e2e8f0',
+                            confirmButtonColor: '#06b6d4',
                         });
                     }
                 },
 
                 async openRatingPicker() {
                     const { value: selected } = await Swal.fire({
-                        title: `Update rating`,
+                        title: 'Update rating',
                         input: 'select',
                         inputValue: this.rating,
                         inputOptions: {
@@ -483,12 +531,18 @@
                             explicit: 'Explicit',
                             unknown: 'Unknown',
                         },
+                        inputPlaceholder: 'Select rating',
                         showCancelButton: true,
                         confirmButtonText: 'Save',
                         cancelButtonText: 'Cancel',
                         background: '#020617',
                         color: '#e2e8f0',
                         confirmButtonColor: '#06b6d4',
+                        inputValidator: (value) => {
+                            if (!value) {
+                                return 'Please select a rating.';
+                            }
+                        }
                     });
 
                     if (!selected || selected === this.rating) return;
@@ -500,15 +554,15 @@
                         await this.request(`{{ url('characters') }}/${this.id}/update-rating`, 'PATCH', {
                             rating: selected
                         });
-                        window.location.reload();
                     } catch (error) {
                         this.rating = previous;
                         Swal.fire({
                             icon: 'error',
                             title: 'Failed',
                             text: error.message || 'Failed to update rating.',
-                            background: '#0f172a',
+                            background: '#020617',
                             color: '#e2e8f0',
+                            confirmButtonColor: '#06b6d4',
                         });
                     }
                 },
@@ -516,7 +570,7 @@
                 async destroy() {
                     const result = await Swal.fire({
                         title: 'Delete character?',
-                        text: `Character "${this.name}" will be deleted permanently.`,
+                        text: `Character "${this.name}" and its relationships will be permanently deleted.`,
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonText: 'Yes, delete',
@@ -529,16 +583,18 @@
                     if (!result.isConfirmed) return;
 
                     try {
-                        await this.request(`{{ url('characters') }}/${this.id}`, 'DELETE');
+                        const data = await this.request(`{{ url('characters') }}/${this.id}`, 'DELETE');
 
                         const card = document.getElementById(`character-card-${this.id}`);
-                        card?.remove();
+                        if (card) {
+                            card.remove();
+                        }
 
                         Swal.fire({
                             icon: 'success',
                             title: 'Deleted',
-                            text: `"${this.name}" has been deleted.`,
-                            timer: 1400,
+                            text: data.message || `"${this.name}" has been deleted.`,
+                            timer: 1600,
                             showConfirmButton: false,
                             background: '#020617',
                             color: '#e2e8f0',
@@ -550,6 +606,7 @@
                             text: error.message || 'Failed to delete character.',
                             background: '#020617',
                             color: '#e2e8f0',
+                            confirmButtonColor: '#06b6d4',
                         });
                     }
                 },
