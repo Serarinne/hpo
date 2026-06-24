@@ -364,7 +364,7 @@
                             <button
                                 type="button"
                                 @click.prevent.stop="destroy"
-                                class="pointer-events-auto w-10 h-10 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)] hover:bg-rose-500/30 hover:border-rose-400/60 hover:scale-105"
+                                class="relative z-30 pointer-events-auto w-10 h-10 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)] hover:bg-rose-500/30 hover:border-rose-400/60 hover:scale-105"
                                 title="Delete Character"
                                 aria-label="Delete {{ $character->name }}"
                             >
