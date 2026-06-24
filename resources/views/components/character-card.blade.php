@@ -63,7 +63,8 @@
         </a>
 
         <button type="button"
-            @click.prevent.stop='window.deleteCharacterCard({{ $character->id }}, @js($character->name))'
+            data-name="{{ $character->name }}"
+            @click.prevent.stop="window.deleteCharacterCard({{ $character->id }}, $el.dataset.name)"
             class="pointer-events-auto w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)] hover:bg-rose-500/30 hover:border-rose-400/60 hover:scale-105"
             title="Delete Character"
             aria-label="Delete {{ $character->name }}">
