@@ -75,7 +75,10 @@ class FetchWallpapersJob implements ShouldQueue
             Log::info("[Fetch Job] [{$mode}] [Task:{$task->id}] [Tag:{$rawTag}] Initial barrier: {$lastRecordedDate->toDateTimeString()}");
         }
 
+        // Variabel untuk melacak tanggal dan ID terbaru di sesi Job ini
         $newestDateInSession = $task->last_post_date;
+        $highestSourceIdInSession = $task->last_source_id; 
+
         $shouldComplete = false;
         $consecutiveDuplicatePages = 0;
         $totalItemsAdded = 0;
@@ -117,9 +120,18 @@ class FetchWallpapersJob implements ShouldQueue
 
             foreach ($posts as $post) {
                 $postDate = $fetcherService->parsePostDate($post, $task->source_api);
+                
+                // Ambil ID dari post (menyesuaikan apakah array atau object)
+                $postId = is_array($post) ? ($post['id'] ?? 0) : ($post->id ?? 0);
 
+                // Update pelacak Tanggal terbaru
                 if (!$newestDateInSession || $postDate->gt($newestDateInSession)) {
                     $newestDateInSession = $postDate;
+                }
+
+                // Update pelacak ID terbaru
+                if ($postId && (!$highestSourceIdInSession || $postId > $highestSourceIdInSession)) {
+                    $highestSourceIdInSession = $postId;
                 }
 
                 if ($lastRecordedDate ? $postDate->gt($lastRecordedDate) : true) {
@@ -171,27 +183,40 @@ class FetchWallpapersJob implements ShouldQueue
 
         $task->refresh();
 
+        // --- SIMPAN CHECKPOINT TERBARU KE DATABASE ---
+        $needsUpdate = false;
+
         if ($newestDateInSession && (!$task->last_post_date || $newestDateInSession->gt($task->last_post_date))) {
             $task->last_post_date = $newestDateInSession;
+            $needsUpdate = true;
+        }
+
+        if ($highestSourceIdInSession && (!$task->last_source_id || $highestSourceIdInSession > $task->last_source_id)) {
+            $task->last_source_id = $highestSourceIdInSession;
+            $needsUpdate = true;
         }
 
         if ($shouldComplete) {
             $task->status = 'completed';
             $task->current_page = 1;
+            $needsUpdate = true;
 
             Log::info("[Fetch Job] [{$mode}] [Task:{$task->id}] [Tag:{$rawTag}] COMPLETED | Added {$totalItemsAdded} | Updated {$totalItemsUpdated} | Skipped {$totalItemsSkipped}");
         } else {
             Log::info("[Fetch Job] [{$mode}] [Task:{$task->id}] [Tag:{$rawTag}] CONTINUE | Next Page {$task->current_page} | Added {$totalItemsAdded} | Updated {$totalItemsUpdated} | Skipped {$totalItemsSkipped}");
         }
 
-        $task->last_run_at = null;
-        $task->save();
+        if ($needsUpdate || $task->isDirty('last_run_at')) {
+            $task->last_run_at = null;
+            $task->save();
+        }
 
         Log::info("[Fetch Job] [{$mode}] [Task:{$task->id}] [Tag:{$rawTag}] END | Final Status: {$task->status} | Current Page: {$task->current_page}");
     }
 
     public function failed(Throwable $exception): void
     {
+        // ... (Kode failed tidak berubah)
         Log::error("[Fetch Job] [Task:{$this->taskId}] FAILED | {$exception->getMessage()}");
 
         try {
