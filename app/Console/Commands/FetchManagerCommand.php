@@ -291,7 +291,7 @@ class FetchManagerCommand extends Command
 
         $tasks = collect();
         $now = now();
-        $cutoff = $now->copy()->subHours(24);
+        $cutoff = $now->copy()->subHours(12);
 
         $candidates = FetchTask::where('source_api', $sourceApi)
             ->where('status', 'completed')
