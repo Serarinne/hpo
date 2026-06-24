@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\App\FetchedWallpaper;
-use App\Models\App\Wallpaper;
+use App\Models\FetchedWallpaper;
+use App\Models\Wallpaper;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\DomCrawler\Crawler;
