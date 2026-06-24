@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\App\FetchTask;
+use App\Models\FetchTask;
 use App\Services\WallpaperFetcherService;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
