@@ -369,4 +369,143 @@ class CharacterController extends Controller
 
         return $content;
     }
+
+        public function mergeForm($id)
+    {
+        $character = Character::with(['series', 'parents', 'apiTags'])->findOrFail($id);
+
+        return view('characters.merge', compact('character'));
+    }
+
+    public function merge(Request $request, $id)
+    {
+        $source = Character::findOrFail($id);
+
+        $validated = $request->validate([
+            'target_id' => [
+                'required',
+                'integer',
+                'different:' . $id,
+                'exists:characters,id',
+            ],
+        ]);
+
+        $target = Character::findOrFail($validated['target_id']);
+
+        DB::beginTransaction();
+
+        try {
+            // 1. Merge wallpapers (pivot: wallpaper_character)
+            $sourceWallpaperIds = $source->wallpapers()->pluck('wallpapers.id')->toArray();
+            $targetWallpaperIds = $target->wallpapers()->pluck('wallpapers.id')->toArray();
+            $newWallpaperIds    = array_diff($sourceWallpaperIds, $targetWallpaperIds);
+            
+            if (!empty($newWallpaperIds)) {
+                $target->wallpapers()->attach($newWallpaperIds);
+            }
+
+            // 2. Merge series (pivot: character_series)
+            $sourceSeriesIds = $source->series()->pluck('series.id')->toArray();
+            $targetSeriesIds = $target->series()->pluck('series.id')->toArray();
+            $newSeriesIds    = array_diff($sourceSeriesIds, $targetSeriesIds);
+            
+            if (!empty($newSeriesIds)) {
+                $target->series()->attach($newSeriesIds);
+            }
+
+            // 3. Merge parent relationships (pivot: character_relationships)
+            $sourceParents = $source->parents()->withPivot('relation_type')->get();
+            foreach ($sourceParents as $parent) {
+                if ($parent->id === $target->id) continue; // Hindari self-loop
+
+                if (!$target->parents()->where('parent_id', $parent->id)->exists()) {
+                    $target->parents()->attach($parent->id, [
+                        'relation_type' => $parent->pivot->relation_type ?? 'variant',
+                    ]);
+                }
+            }
+
+            // 4. Merge children relationships (pivot: character_relationships)
+            $sourceChildren = $source->children()->withPivot('relation_type')->get();
+            foreach ($sourceChildren as $child) {
+                if ($child->id === $target->id) continue; // Hindari self-loop
+
+                if (!$target->children()->where('child_id', $child->id)->exists()) {
+                    $target->children()->attach($child->id, [
+                        'relation_type' => $child->pivot->relation_type ?? 'variant',
+                    ]);
+                }
+            }
+
+            // 5. Merge apiTags (hasMany: character_api_tags)
+            $existingTagKeys = $target->apiTags()
+                ->get(['source_api', 'tag_name'])
+                ->map(fn($t) => $t->source_api . '|' . $t->tag_name)
+                ->toArray();
+
+            $tagsToCreate = $source->apiTags()
+                ->get()
+                ->filter(fn($tag) => !in_array($tag->source_api . '|' . $tag->tag_name, $existingTagKeys))
+                ->map(fn($tag) => [
+                    'source_api' => $tag->source_api,
+                    'tag_name'   => $tag->tag_name,
+                ])
+                ->values()
+                ->toArray();
+
+            if (!empty($tagsToCreate)) {
+                $target->apiTags()->createMany($tagsToCreate);
+            }
+
+            // 6. Recalculate DataCount untuk target
+            $actualWallpaperCount = $target->wallpapers()->count();
+            \App\Models\DataCount::updateOrCreate(
+                [
+                    'type' => 'character',
+                    'data_id' => $target->id
+                ],
+                [
+                    'total' => $actualWallpaperCount
+                ]
+            );
+
+            // 7. Hapus DataCount milik source
+            \App\Models\DataCount::where('type', 'character')
+                ->where('data_id', $source->id)
+                ->delete();
+
+            // 8. Bersihkan semua relasi source sebelum delete
+            $source->wallpapers()->detach();
+            $source->series()->detach();
+            $source->parents()->detach();
+            $source->children()->detach();
+            $source->apiTags()->delete();
+            
+            // 9. Eksekusi Hapus Character Source
+            $source->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success'     => true,
+                'message'     => "Character \"{$source->name}\" berhasil di-merge ke \"{$target->name}\".",
+                'target_id'   => $target->id,
+                'target_slug' => $target->slug,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Character Merge Error: ' . $e->getMessage(), [
+                'source_id' => $source->id,
+                'target_id' => $target->id,
+                'trace'     => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan sistem saat melakukan merge. Silakan cek log.'
+            ], 500);
+        }
+    }
 }

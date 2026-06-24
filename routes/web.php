@@ -46,6 +46,8 @@ Route::middleware(['auth', IsAdmin::class])->group(function () {
         Route::delete('/{id}', [CharacterController::class, 'delete'])->name('delete');
         Route::patch('/{id}/toggle-debug', [CharacterController::class, 'toggleDebug'])->name('toggle-debug');
         Route::patch('/{id}/update-rating', [CharacterController::class, 'updateRating'])->name('update-rating');
+        Route::get('/{id}/merge', [CharacterController::class, 'mergeForm'])->name('merge.form');
+        Route::post('/{id}/merge', [CharacterController::class, 'merge'])->name('merge');
     });
 
     // Series
