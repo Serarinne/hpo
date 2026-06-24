@@ -240,6 +240,25 @@ class CharacterController extends Controller
             ->with('success', 'Character ' . $characterName . ' and its relationships have been permanently deleted.');
     }
 
+    public function bulkDelete(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'exists:characters,id'],
+        ]);
+
+        $characters = Character::whereIn('id', $validated['ids'])->get();
+        $count = $characters->count();
+
+        Character::whereIn('id', $validated['ids'])->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$count} character(s) deleted successfully.",
+            'count' => $count,
+        ]);
+    }
+
     public function toggleDebug(Request $request, $id)
     {
         $character = Character::findOrFail($id);

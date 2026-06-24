@@ -50,7 +50,10 @@
 <body class="bg-slate-950 text-slate-200 font-sans min-h-screen flex flex-col selection:bg-cyan-500 selection:text-white">
     <x-navbar />
 
-    <main class="flex-grow pt-8 pb-32 sm:pt-12 relative overflow-hidden text-slate-300">
+    <main
+        class="flex-grow pt-8 pb-32 sm:pt-12 relative overflow-hidden text-slate-300"
+        x-data="characterListManager()"
+    >
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-cyan-500/10 blur-[120px] pointer-events-none rounded-full" aria-hidden="true"></div>
 
         <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -74,7 +77,7 @@
                 </div>
             </div>
 
-            <form method="GET" action="{{ route('characters.index') }}" class="relative mb-8 z-30 group">
+            <form method="GET" action="{{ route('characters.index') }}" class="relative mb-6 z-30 group">
                 <div class="absolute inset-0 bg-slate-900/60 border border-white/10 rounded-[2rem] shadow-xl backdrop-blur-md overflow-hidden pointer-events-none z-0">
                     <div class="absolute -top-24 -right-24 w-48 h-48 bg-cyan-500/10 blur-[80px] group-hover:bg-cyan-500/20 transition-colors"></div>
                 </div>
@@ -270,6 +273,45 @@
                 </div>
             </form>
 
+            <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-md px-4 py-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <label class="inline-flex items-center gap-3 text-sm text-slate-300 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-slate-900 shadow-inner"
+                            :checked="allSelected"
+                            @change="toggleSelectAll($event)"
+                        >
+                        <span class="font-semibold">Select all on this page</span>
+                    </label>
+
+                    <span class="text-sm text-slate-400">
+                        <span class="font-bold text-cyan-400" x-text="selectedCount"></span> selected
+                    </span>
+                </div>
+
+                <div class="flex gap-3">
+                    <button
+                        type="button"
+                        @click="clearSelection"
+                        :disabled="selectedCount === 0 || bulkDeleting"
+                        class="px-4 py-2 rounded-xl bg-slate-800 border border-white/10 text-slate-300 font-semibold transition hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Clear Selection
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="bulkDelete"
+                        :disabled="selectedCount === 0 || bulkDeleting"
+                        class="px-5 py-2 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 font-bold transition hover:bg-rose-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <span x-show="!bulkDeleting">Delete Selected</span>
+                        <span x-show="bulkDeleting">Deleting...</span>
+                    </button>
+                </div>
+            </div>
+
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-12 relative z-10">
                 @forelse($characters as $character)
                     @php
@@ -291,6 +333,7 @@
 
                     <article
                         id="character-card-{{ $character->id }}"
+                        data-character-id="{{ $character->id }}"
                         x-data="characterCard({
                             id: {{ $character->id }},
                             name: @js($character->name),
@@ -298,6 +341,7 @@
                             rating: @js($character->rating ?? 'unknown')
                         })"
                         class="break-inside-avoid group relative rounded-[1.5rem] overflow-hidden border border-white/5 bg-slate-950 aspect-square shadow-lg hover:shadow-[0_0_25px_rgba(34,211,238,0.2)] hover:border-cyan-500/40 transform hover:-translate-y-1 transition-all duration-300 outline-none"
+                        :class="$store.selection?.ids?.includes({{ $character->id }}) ? 'ring-2 ring-cyan-500/60 border-cyan-500/40' : ''"
                         title="{{ $character->name }}"
                         aria-label="{{ $character->name }}"
                         itemscope
@@ -308,6 +352,20 @@
                             class="absolute inset-0 z-10 outline-none"
                             aria-label="Edit {{ $character->name }}"
                         ></a>
+
+                        <div class="absolute top-3 left-3 z-40">
+                            <label
+                                class="w-9 h-9 rounded-xl border border-white/10 bg-slate-900/80 backdrop-blur-md flex items-center justify-center cursor-pointer hover:border-cyan-500/40 transition"
+                                @click.stop
+                            >
+                                <input
+                                    type="checkbox"
+                                    class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-slate-900 shadow-inner"
+                                    :checked="$store.selection.ids.includes({{ $character->id }})"
+                                    @change.stop="$store.selection.toggle({{ $character->id }})"
+                                >
+                            </label>
+                        </div>
 
                         <div class="absolute inset-0 z-0 {{ !$hasImage ? 'flex justify-center items-center p-6 bg-slate-900/50 backdrop-blur-sm' : 'bg-slate-950' }}">
                             @if($hasImage)
@@ -331,7 +389,7 @@
                             @endif
                         </div>
 
-                        <div class="absolute top-3 left-3 flex flex-col gap-2 z-30">
+                        <div class="absolute top-14 left-3 flex flex-col gap-2 z-30">
                             <button
                                 type="button"
                                 @click.prevent.stop="toggleDebug"
@@ -363,7 +421,7 @@
                             <button
                                 type="button"
                                 @click.prevent.stop="destroy"
-                                :disabled="isDeleting"
+                                :disabled="isDeleting || bulkDeletingGlobal()"
                                 class="w-10 h-10 rounded-xl border flex items-center justify-center transition-all duration-300 backdrop-blur-md outline-none bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)] hover:bg-rose-500/30 hover:border-rose-400/60 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 title="Delete Character"
                                 aria-label="Delete {{ $character->name }}"
@@ -378,7 +436,7 @@
                             <button
                                 type="button"
                                 @click.prevent.stop="openRatingPicker"
-                                :disabled="isBusy || isDeleting"
+                                :disabled="isBusy || isDeleting || bulkDeletingGlobal()"
                                 class="h-10 px-3 rounded-xl border backdrop-blur-md transition-all duration-300 flex items-center justify-center font-black text-[10px] uppercase tracking-widest outline-none hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 :class="ratingBadgeClass"
                                 :data-rating="rating"
@@ -429,6 +487,150 @@
     <script>
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
+        document.addEventListener('alpine:init', () => {
+            Alpine.store('selection', {
+                ids: [],
+
+                toggle(id) {
+                    if (this.ids.includes(id)) {
+                        this.ids = this.ids.filter(item => item !== id);
+                    } else {
+                        this.ids = [...this.ids, id];
+                    }
+                },
+
+                clear() {
+                    this.ids = [];
+                },
+
+                setAll(ids) {
+                    this.ids = [...ids];
+                },
+
+                remove(id) {
+                    this.ids = this.ids.filter(item => item !== id);
+                }
+            });
+        });
+
+        function characterListManager() {
+            return {
+                bulkDeleting: false,
+
+                get pageIds() {
+                    return Array.from(document.querySelectorAll('[data-character-id]'))
+                        .map(el => Number(el.dataset.characterId))
+                        .filter(Boolean);
+                },
+
+                get selectedCount() {
+                    return Alpine.store('selection').ids.length;
+                },
+
+                get allSelected() {
+                    return this.pageIds.length > 0 && this.pageIds.every(id => Alpine.store('selection').ids.includes(id));
+                },
+
+                toggleSelectAll(event) {
+                    if (event.target.checked) {
+                        Alpine.store('selection').setAll(this.pageIds);
+                    } else {
+                        Alpine.store('selection').clear();
+                    }
+                },
+
+                clearSelection() {
+                    Alpine.store('selection').clear();
+                },
+
+                async request(url, method = 'DELETE', body = null) {
+                    const options = {
+                        method,
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken,
+                        }
+                    };
+
+                    if (body !== null) {
+                        options.headers['Content-Type'] = 'application/json';
+                        options.body = JSON.stringify(body);
+                    }
+
+                    const response = await fetch(url, options);
+
+                    let data = {};
+                    try {
+                        data = await response.json();
+                    } catch (_) {}
+
+                    if (!response.ok || data.success === false) {
+                        throw new Error(data.message || 'Request failed.');
+                    }
+
+                    return data;
+                },
+
+                async bulkDelete() {
+                    const selectedIds = [...Alpine.store('selection').ids];
+
+                    if (this.bulkDeleting || selectedIds.length === 0) return;
+
+                    this.bulkDeleting = true;
+
+                    try {
+                        const result = await Swal.fire({
+                            title: 'Delete selected characters?',
+                            text: `${selectedIds.length} character(s) will be permanently deleted.`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, delete all',
+                            cancelButtonText: 'Cancel',
+                            confirmButtonColor: '#e11d48',
+                            background: '#020617',
+                            color: '#e2e8f0',
+                            showLoaderOnConfirm: true,
+                            allowOutsideClick: () => !Swal.isLoading(),
+                            allowEscapeKey: () => !Swal.isLoading(),
+                            preConfirm: async () => {
+                                try {
+                                    return await this.request(`{{ route('characters.bulk-delete') }}`, 'DELETE', {
+                                        ids: selectedIds
+                                    });
+                                } catch (error) {
+                                    Swal.showValidationMessage(error.message || 'Failed to delete selected characters.');
+                                    throw error;
+                                }
+                            }
+                        });
+
+                        if (!result.isConfirmed) {
+                            return;
+                        }
+
+                        selectedIds.forEach(id => {
+                            const card = document.getElementById(`character-card-${id}`);
+                            if (card) card.remove();
+                            Alpine.store('selection').remove(id);
+                        });
+
+                        await Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted',
+                            text: result.value?.message || `${selectedIds.length} character(s) deleted successfully.`,
+                            timer: 1600,
+                            showConfirmButton: false,
+                            background: '#020617',
+                            color: '#e2e8f0',
+                        });
+                    } finally {
+                        this.bulkDeleting = false;
+                    }
+                }
+            };
+        }
+
         function characterCard({ id, name, debug, rating }) {
             return {
                 id,
@@ -471,6 +673,11 @@
                     return this.ratingMap[this.rating]?.class ?? this.ratingMap.unknown.class;
                 },
 
+                bulkDeletingGlobal() {
+                    const root = document.querySelector('main[x-data]');
+                    return root && root.__x ? root.__x.$data.bulkDeleting : false;
+                },
+
                 async request(url, method = 'PATCH', body = null) {
                     const options = {
                         method,
@@ -501,7 +708,7 @@
                 },
 
                 async toggleDebug() {
-                    if (this.isBusy || this.isDeleting) return;
+                    if (this.isBusy || this.isDeleting || this.bulkDeletingGlobal()) return;
 
                     this.isBusy = true;
                     const previous = this.debug;
@@ -528,7 +735,7 @@
                 },
 
                 async openRatingPicker() {
-                    if (this.isBusy || this.isDeleting) return;
+                    if (this.isBusy || this.isDeleting || this.bulkDeletingGlobal()) return;
 
                     const { value: selected } = await Swal.fire({
                         title: 'Update rating',
@@ -581,7 +788,7 @@
                 },
 
                 async destroy() {
-                    if (this.isDeleting) return;
+                    if (this.isDeleting || this.bulkDeletingGlobal()) return;
                     this.isDeleting = true;
 
                     try {
@@ -614,6 +821,7 @@
 
                         const card = document.getElementById(`character-card-${this.id}`);
                         card?.remove();
+                        Alpine.store('selection').remove(this.id);
 
                         await Swal.fire({
                             icon: 'success',

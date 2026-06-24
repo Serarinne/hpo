@@ -41,6 +41,7 @@ Route::middleware(['auth', IsAdmin::class])->group(function () {
     Route::prefix('characters')->name('characters.')->group(function () {
         Route::get('/', [CharacterController::class, 'index'])->name('index');
         Route::get('/list', [CharacterController::class, 'list'])->name('list');
+        Route::delete('/bulk-delete', [CharacterController::class, 'bulkDelete'])->name('bulk-delete');
         Route::get('/{id}', [CharacterController::class, 'edit'])->name('edit');
         Route::patch('/{id}', [CharacterController::class, 'update'])->name('update');
         Route::delete('/{id}', [CharacterController::class, 'delete'])->name('delete');
